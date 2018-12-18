@@ -410,7 +410,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 		        goal_reached_ = true;
                 ROS_ERROR_STREAM("GOAL REACHED");
 
-                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
+//                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
                 if (loop_mode_)
                 {
                     segment_counter = 0;
@@ -429,7 +429,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                 acadoVariables.x[3] = referencePath.GetS0();
                 ROS_ERROR_STREAM("SWITCH SPLINE, segment_counter =  " << segment_counter);
 
-                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
+//                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
 		    }
         }
 
