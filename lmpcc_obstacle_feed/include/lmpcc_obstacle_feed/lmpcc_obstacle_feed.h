@@ -36,7 +36,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 
-bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle& obst1, lmpcc_msgs::lmpcc_obstacle& obst2);
+bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs::lmpcc_obstacle const &obst2);
 
 class ObstacleFeed
 {

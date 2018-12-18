@@ -14,7 +14,7 @@ generate_messages(DEPENDENCIES nav_msgs std_msgs geometry_msgs)
 
 catkin_package(
   DEPENDS nav_msgs std_msgs
-  INCLUDE_DIRS include
+  #  INCLUDE_DIRS include
 )
 
 install(DIRECTORY include/

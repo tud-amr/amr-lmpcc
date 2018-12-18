@@ -297,7 +297,7 @@ void ObstacleFeed::visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& ob
     obst2_path_pub.publish(obstacles.lmpcc_obstacles[1].trajectory);
 }
 
-bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle& obst1, lmpcc_msgs::lmpcc_obstacle& obst2) { return (obst1.distance < obst2.distance); }
+bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs::lmpcc_obstacle const &obst2) { return (obst1.distance < obst2.distance); }
 
 void ObstacleFeed::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
 {
@@ -306,7 +306,7 @@ void ObstacleFeed::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
     ellipsesVector = ellipses.lmpcc_obstacles;
 
     // Sort vector according to distances
-    std::sort(ellipsesVector.begin(), ellipsesVector.end(), CompareObstacleDistance);
+    std::sort(ellipsesVector.begin(),ellipsesVector.end(), CompareObstacleDistance);
 
     // Write vector of sorted obstacles to obstacles structure
     ellipses.lmpcc_obstacles = ellipsesVector;
