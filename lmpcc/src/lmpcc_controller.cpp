@@ -45,11 +45,12 @@ bool LMPCC::initialize()
             return false;
         }
 
-
         // Check if all reference vectors are of the same length
         if (!( (lmpcc_config_->ref_x_.size() == lmpcc_config_->ref_y_.size()) && ( lmpcc_config_->ref_x_.size() == lmpcc_config_->ref_theta_.size() ) && (lmpcc_config_->ref_y_.size() == lmpcc_config_->ref_theta_.size()) ))
         {
             ROS_ERROR("Reference path inputs should be of equal length");
+
+            return false;
         }
 
         //Controller options
@@ -272,7 +273,6 @@ bool LMPCC::initialize_visuals()
     global_plan.scale.x = 0.1;
     global_plan.scale.y = 0.1;
     global_plan.scale.z = 0.05;
-
 }
 
 void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
@@ -409,11 +409,17 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 		    if (segment_counter + lmpcc_config_->n_local_ > referencePath.GlobalPathLenght()*lmpcc_config_->n_poly_per_clothoid_){
 		        goal_reached_ = true;
                 ROS_ERROR_STREAM("GOAL REACHED");
+
+                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
                 if (loop_mode_)
                 {
                     segment_counter = 0;
                     goal_reached_ = false;
                     last_poly_ = false;
+
+                    /** Re-initialize local reference path **/
+                    referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
+
                     acadoVariables.x[3] = referencePath.GetS0();
                     ROS_ERROR_STREAM("LOOP STARTED");
                 }
@@ -422,6 +428,8 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                 referencePath.UpdateLocalRefPath(segment_counter, ss, xx, yy, vv);
                 acadoVariables.x[3] = referencePath.GetS0();
                 ROS_ERROR_STREAM("SWITCH SPLINE, segment_counter =  " << segment_counter);
+
+                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
 		    }
         }
 

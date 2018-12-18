@@ -5,7 +5,7 @@ gazebo_simulation: true
 # Debug modes
 activate_output: true
 activate_debug_output: false
-activate_timing_output: true
+activate_timing_output: false
 activate_visualization: true
 activate_feedback_message: false
 
@@ -24,8 +24,8 @@ control_dim: 4
 
 # Input and output topics
 publish:
-    cmd:          jackal_velocity_controller/cmd_vel
-    cmd_sim:      cmd_vel
+    cmd:          cmd_vel
+    cmd_sim:      jackal_velocity_controller/cmd_vel
 subscribe:
     robot_state:  robot_state
     obstacles:    ellipse_objects_feed

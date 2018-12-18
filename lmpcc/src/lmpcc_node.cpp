@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     // initialize predictive control node
     if (!controller_.initialize())
     {
-      ROS_ERROR_STREAM_NAMED("FILED TO INITIALIZE %s", ros::this_node::getName().c_str());
+      ROS_ERROR_STREAM_NAMED("FAILED TO INITIALIZE %s", ros::this_node::getName().c_str());
       exit(1);
     }
     else

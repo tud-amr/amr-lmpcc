@@ -54,7 +54,12 @@ void ReferencePath::InitLocalRefPath(int N_local, int N_seg_per_cloth, std::vect
     N_pts_clothoid = N_cloth_segments*N_seg_in_cloth + 1;
 
     // Initialize reference velocity setpoint
-    v_local.resize(N_local,1);
+    v_local.resize(N_local);
+
+    for (int v_it = 0; v_it < N_local; v_it++)
+    {
+        v_local[v_it] = 1;
+    }
 
     // Initialize variables to generate clothoid local reference path
     double k, dk, L;
@@ -142,7 +147,7 @@ void ReferencePath::UpdateLocalRefPath(int traj_i, std::vector<double> &s_local,
     double xroad1, xroad2, yroad1, yroad2, thetaroad1, thetaroad2;
 
     int cloth_end_i = floor( ((double) (traj_i + N_segments - 1))/((double) N_seg_in_cloth) );
-    ROS_INFO_STREAM("cloth_end_i = " << cloth_end_i);
+//    ROS_INFO_STREAM("cloth_end_i = " << cloth_end_i);
 
     // Deal with last sections of the reference path
     if (cloth_end_i + 2 > X_global.size() ) {
