@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+    <rosparam command="load" file="$(find lmpcc_obstacle_feed)/config/lmpcc_obstacle_feed_config.yaml"/>
+
+    <arg name="map_file" default="$(find lmpcc_obstacle_feed)/maps/faculty.yaml"/>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+<!-- <node pkg="tf" type="static_transform_publisher" name="map_odom" args="1.5 2.7 0 0 0 0 map odom 100"/> -->
+
+<node pkg="lmpcc_obstacle_feed" type="lmpcc_obstacle_feed_node" name="lmpcc_obstacle_feed_node" cwd="node" respawn="false" output="screen"/>
+
+</launch>

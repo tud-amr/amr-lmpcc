@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<launch>
+    <rosparam command="load" file="$(find obstacle_feed)/config/obstacle_feed_config.yaml"/>
+
+<!-- <arg name="map_file" default="$(find obstacle_feed)/maps/static_map.yaml"/> -->
+    <arg name="map_file" default="$(find obstacle_feed)/maps/faculty.yaml"/>
+   <!-- <arg name="map_file" default="$(find obstacle_feed)/maps/corridor.yaml"/>-->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+<!-- <node pkg="tf" type="static_transform_publisher" name="map_odom" args="1.5 2.7 0 0 0 0 map odom 100"/> -->
+
+<node pkg="obstacle_feed" type="obstacle_feed_node" name="obstacle_feed_node" cwd="node" respawn="false" output="screen"/>
+
+</launch>

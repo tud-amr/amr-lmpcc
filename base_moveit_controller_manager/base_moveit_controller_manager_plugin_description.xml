@@ -1,0 +1,11 @@
+<library path="libbase_moveit_controller_manager">
+
+  <class name="base_moveit_controller_manager/BaseMoveItControllerManager"
+         type="base_moveit_controller_manager::BaseMoveItControllerManager"
+         base_class_type="moveit_controller_manager::MoveItControllerManager">
+    <description>
+      A whole -body controller for MoveIt.
+    </description>
+  </class>
+
+</library>

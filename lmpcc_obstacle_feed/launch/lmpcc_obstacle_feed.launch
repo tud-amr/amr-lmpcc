@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+
+<launch>
+    <rosparam command="load" file="$(find lmpcc_obstacle_feed)/config/lmpcc_obstacle_feed_config.yaml"/>
+
+    <node pkg="lmpcc_obstacle_feed" type="lmpcc_obstacle_feed_node" name="lmpcc_obstacle_feed_node" cwd="node" respawn="false" output="screen"/>
+
+</launch>

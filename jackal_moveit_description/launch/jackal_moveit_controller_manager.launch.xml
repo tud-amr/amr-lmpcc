@@ -1,0 +1,26 @@
+<launch>
+
+    <!-- This file makes it easy to include the settings for trajectory execution  -->
+    <arg name="pkg_moveit_config" default="$(find jackal_moveit_description)"/>
+    <arg name="config_path" default="$(arg pkg_moveit_config)/config"/>
+    <arg name="fake_execution" default="false"/>
+
+    <!-- Flag indicating whether MoveIt! is allowed to load/unload  or switch controllers -->
+    <param name="moveit_manage_controllers" value="true"/>
+
+    <!-- When determining the expected duration of a trajectory, this multiplicative factor is applied to get the allowed duration of execution -->
+    <param name="trajectory_execution/allowed_execution_duration_scaling" value="1.2"/> <!-- default 1.2 -->
+    <!-- Allow more than the expected execution time before triggering a trajectory cancel (applied after scaling) -->
+    <param name="trajectory_execution/allowed_goal_duration_margin" value="0.5"/> <!-- default 0.5 -->
+    <param name="trajectory_execution/controller_connection_timeout" value="0.0"/> <!-- default 15.0 -->
+
+    <group if="$(arg fake_execution)">
+        <param name="moveit_controller_manager" value="moveit_fake_controller_manager/MoveItFakeControllerManager"/>
+        <rosparam file="$(arg config_path)/fake_controllers.yaml"/>
+    </group>
+    <group unless ="$(arg fake_execution)">
+        <param name="moveit_controller_manager" value="base_moveit_controller_manager/BaseMoveItControllerManager"/>
+        <rosparam file="$(arg config_path)/controllers.yaml"/>
+    </group>
+
+</launch>

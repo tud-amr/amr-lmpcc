@@ -1,0 +1,76 @@
+# Simulation mode
+simulation_mode: true
+gazebo_simulation: true
+
+# Debug modes
+activate_output: true
+activate_debug_output: false
+activate_timing_output: true
+activate_visualization: true
+activate_feedback_message: false
+
+# Controller frequency in hz
+controller_frequency: 20
+
+# Dimensions of controlled vehicle
+robot_dimensions:
+    n_discs: 1
+    ego_l: 0.5
+    ego_w: 0.4
+
+# Optimal Control Problem dimensions
+state_dim: 6
+control_dim: 4
+
+# Input and output topics
+publish:
+    cmd:          jackal_velocity_controller/cmd_vel
+    cmd_sim:      cmd_vel
+subscribe:
+    robot_state:  robot_state
+    obstacles:    ellipse_objects_feed
+
+# Coordinate frame definitions
+frames:
+    robot_base_link:  base_link
+    planning_frame:   map
+
+# Path parametrization
+parametrization:
+    n_local: 5
+    n_poly_per_clothoid: 2
+    n_search_points:  20
+    search_window_size: 0.2
+
+# Parameters for predefined reference path
+global_path:
+    x: [0, 2, 4, 6, 8, 10, 12, 14]
+    y: [0, 0, 0, 0, 0, 0, 0, 0]
+    theta: [0, 0, 0, 0, 0, 0, 0, 0]
+    reference_velocity: 0.5
+
+# Collision avoidance parameters
+collision_avoidance:
+    n_obstacles: 2
+    delta_max: 2
+    occupied_threshold: 70
+
+# OCP parameters
+ocp:
+    weights:
+        contour_weight_factors: [1.0, 1.0]      # contour error, lag error
+        control_weight_factors: [1.5, 0.1]      # weight on v, weight on omega
+        repulsive_weight: 0.2
+        slack_weight: 10000
+    constraints:
+        velocity_constraints:
+            min: [-1, -1]
+            max: [1,1]
+
+# OCP solver configuration
+acado_config:
+    max_num_iteration: 10
+    kkt_tolerance: 1e-3
+    integrator_tolerance: 1e-3
+    time_horizon: 5.0
+    discretization_intervals: 25

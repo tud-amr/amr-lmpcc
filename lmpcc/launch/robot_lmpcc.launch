@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- Debug Info -->
+    <arg name="debug" default="false" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="debug_config_parameter" default="false"/>
+    <arg name="debug_kinematic_cal" default="false"/>
+    <arg name="debug_collision_detection" default="false"/>
+    <arg name="config" default="$(find mobile_robot_state_publisher)"/>
+    <arg name="scan_topic" value="velodyne_scan1" />
+
+    <!--Launch localization node-->
+    <arg name="map_file" default="$(find jackal_navigation)/maps/cyberzoo.yaml"/>
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+    <include file="$(find jackal_navigation)/launch/include/amcl.launch" />
+
+    <!--Publish the mobile robot pose -->
+    <node name="mobile_robot_state_publisher" pkg="mobile_robot_state_publisher" type="mobile_robot_state_publisher_node" respawn="false" output="screen">
+            <rosparam command="load" file="$(arg config)/config/jackal.yaml" />
+    </node>
+
+    # load Cartesian controller config
+    <rosparam command="load" file="$(find predictive_control)/config/predictive_config_parameter.yaml"/>
+
+    <node pkg="predictive_control" type="predictive_control_node" name="predictive_control_node" cwd="node" respawn="false" output="screen"/>
+	
+</launch>  
+
+

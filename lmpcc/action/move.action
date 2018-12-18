@@ -1,0 +1,9 @@
+#goal definition, use intrative marker to track desired position,frame id to track, goal position need to be set
+string target_frame_id
+geometry_msgs/PoseStamped target_endeffector_pose
+---
+#result definition, reach to goal pose
+bool reach
+---
+#feedback, current position of endeffector
+geometry_msgs/Pose current_endeffector_pose

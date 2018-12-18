@@ -1,0 +1,4 @@
+controller_list:
+  - name: fake_base_controller
+    joints:
+      - base

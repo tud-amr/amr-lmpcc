@@ -1,0 +1,8 @@
+#goal definition, use intrative marker to track desired position,frame id to track, goal position need to be set
+moveit_msgs/RobotTrajectory trajectory
+---
+#result definition, reach to goal pose
+bool reach
+---
+#feedback, current position of endeffector
+geometry_msgs/Pose tracking_error

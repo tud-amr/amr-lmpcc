@@ -1,0 +1,9 @@
+## Driver Parameters
+
+#publisher rate
+rate: 50
+#robot base frame
+base_frame: chassis
+#map frame
+root_frame: map
+robot_state_topic: /robot_state

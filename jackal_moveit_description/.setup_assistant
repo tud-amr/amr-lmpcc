@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: jackal_description
+    relative_path: urdf/jackal2.urdf.xacro
+  SRDF:
+    relative_path: config/jackal.srdf
+  CONFIG:
+    author_name: Bruno Brito
+    author_email: bruno.debrito@tudelft.nl
+    generated_timestamp: 1535457019
