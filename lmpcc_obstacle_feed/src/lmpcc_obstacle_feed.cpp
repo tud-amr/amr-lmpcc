@@ -293,8 +293,10 @@ void ObstacleFeed::visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& ob
 
     visualize_obstacles_pub.publish(markerArray);
 
-    obst1_path_pub.publish(obstacles.lmpcc_obstacles[0].trajectory);
-    obst2_path_pub.publish(obstacles.lmpcc_obstacles[1].trajectory);
+    if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 2) {
+        obst1_path_pub.publish(obstacles.lmpcc_obstacles[0].trajectory);
+        obst2_path_pub.publish(obstacles.lmpcc_obstacles[1].trajectory);
+    }
 }
 
 bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs::lmpcc_obstacle const &obst2) { return (obst1.distance < obst2.distance); }
