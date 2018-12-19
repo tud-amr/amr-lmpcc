@@ -381,8 +381,7 @@ bool ObstacleFeed::transformPose(const std::string& from, const std::string& to,
         ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",from.c_str(), to.c_str());
     }
 
-    stampedPose_in.pose = stampedPose_out.pose;
-    stampedPose_in.header.frame_id = to;
+    pose = stampedPose_out.pose;
 
     return transform;
 }

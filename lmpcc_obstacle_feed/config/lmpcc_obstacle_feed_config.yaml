@@ -13,7 +13,7 @@ prediction_horizon: 5
 
 # Define the coordinate frames
 frames:
-    planning_frame: map            # For predefined obstacles
+    planning_frame: map             # For predefined obstacles
     robot_frame: base_link          # For actual measured obstacles
 
 publish:
