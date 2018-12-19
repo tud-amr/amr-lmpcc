@@ -29,6 +29,7 @@ bool ObstacleFeed::initialize()
         maxV_ = lmpcc_obstacle_feed_config_->max_obstacle_volume_;
         N_obstacles_ = lmpcc_obstacle_feed_config_->obstacle_threshold_;
         distance_ = lmpcc_obstacle_feed_config_->distance_threshold_;
+        obstacle_size_ = lmpcc_obstacle_feed_config_->obstacle_size_;
 
         dt_ = lmpcc_obstacle_feed_config_->prediction_horizon_/lmpcc_obstacle_feed_config_->discretization_steps_;
 
@@ -324,8 +325,8 @@ lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection
 {
 
     lmpcc_msgs::lmpcc_obstacle ellipse;
-    ellipse.major_semiaxis = 0.3; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = 0.3; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
     ellipse.distance = distance;
     ellipse.pose = object.bbox.center;
     return ellipse;
