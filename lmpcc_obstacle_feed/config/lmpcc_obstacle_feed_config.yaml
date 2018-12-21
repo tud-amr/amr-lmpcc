@@ -1,6 +1,6 @@
 # Obstacle feed mode (0 = sensor mode, 1 = OptiTrack mode, 2 = predefined obstacles)
 # need to recompile after changing!
-obstacle_feed_mode: 0
+obstacle_feed_mode: 2
 
 # Debugging info
 activate_debug_output: true

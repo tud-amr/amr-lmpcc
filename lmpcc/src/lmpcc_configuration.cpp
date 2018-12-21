@@ -183,6 +183,13 @@ bool LMPCC_configuration::initialize()
     }
 
     // Occupation threshold of searched occupancy grid
+    if (!nh_config.getParam ("collision_avoidance/free_space_assumption", free_space_assumption_) )
+    {
+        ROS_WARN(" Parameter '/collision_avoidance/free_space_assumption not set on %s node" , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    // Occupation threshold of searched occupancy grid
     if (!nh_config.getParam ("collision_avoidance/occupied_threshold", occupied_threshold_) )
     {
         ROS_WARN(" Parameter '/collision_avoidance/occupied_threshold not set on %s node" , ros::this_node::getName().c_str());

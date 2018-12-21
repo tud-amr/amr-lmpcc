@@ -101,6 +101,7 @@ public:
     /** Number of dynamic obstacles **/
     int n_obstacles_;
     double delta_max_;
+    bool free_space_assumption_;
     int occupied_threshold_;
 
     /** OCP weight factors **/

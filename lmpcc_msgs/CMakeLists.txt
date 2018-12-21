@@ -10,6 +10,11 @@ add_message_files(
   FILES lmpcc_feedback.msg lmpcc_obstacle.msg lmpcc_obstacle_array.msg
 )
 
+add_service_files(
+    DIRECTORY srv
+    FILES IntTrigger.srv
+)
+
 generate_messages(DEPENDENCIES nav_msgs std_msgs geometry_msgs)
 
 catkin_package(

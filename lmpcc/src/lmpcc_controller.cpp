@@ -65,6 +65,7 @@ bool LMPCC::initialize()
         repulsive_weight_ = lmpcc_config_->repulsive_weight_;
         reference_velocity_ = lmpcc_config_->reference_velocity_;
         collision_free_delta_max_ = lmpcc_config_->delta_max_;
+        free_space_assumption_ = lmpcc_config_->free_space_assumption_;
         occupied_threshold_ = lmpcc_config_->occupied_threshold_;
         n_search_points_ = lmpcc_config_->n_search_points_;
         window_size_ = lmpcc_config_->search_window_size_;
@@ -72,7 +73,6 @@ bool LMPCC::initialize()
         /** Set task flags and counters **/
         tracking_ = true;
         move_action_result_.reach = false;
-        idx = 1;
         goal_reached_ = false;              // Flag for reaching the goal
         last_poly_ = false;                 // Flag for last segment
         segment_counter = 0;                          // Initialize reference path segment counter
@@ -129,7 +129,9 @@ bool LMPCC::initialize()
 
         /** Services **/
         map_service_ = nh.serviceClient<nav_msgs::GetMap>("static_map");
-        update_trigger = nh.serviceClient<std_srvs::Empty>("update_trigger");
+        update_trigger = nh.serviceClient<lmpcc_msgs::IntTrigger>("update_trigger_int");
+
+        obstacle_trigger.request.value = (int) lmpcc_config_->controller_frequency_;
 
 		ros::Duration(1).sleep();
 
@@ -204,7 +206,7 @@ bool LMPCC::initialize()
             initialize_visuals();
         }
 
-		ROS_WARN("PREDICTIVE CONTROL INTIALIZED!!");
+		ROS_WARN("LMPCC INTIALIZED!!");
 		return true;
 	}
 	else
@@ -291,6 +293,7 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
 
     reference_velocity_ = config.vRef;
     collision_free_delta_max_ = config.deltaMax;
+    free_space_assumption_ = config.freeSpace;
     occupied_threshold_ = config.occThres;
 
     enable_output_ = config.enable_output;
@@ -348,7 +351,8 @@ void LMPCC::broadcastTF(){
 	transformStamped.header.frame_id = lmpcc_config_->planning_frame_;
 	transformStamped.child_frame_id = lmpcc_config_->robot_base_link_;
 
-	if(!enable_output_){
+	if(!enable_output_)
+	{
 		transformStamped.transform.translation.x = current_state_(0);
 		transformStamped.transform.translation.y = current_state_(1);
 		transformStamped.transform.translation.z = 0.0;
@@ -358,8 +362,8 @@ void LMPCC::broadcastTF(){
 		transformStamped.transform.rotation.z = q.z();
 		transformStamped.transform.rotation.w = q.w();
 	}
-
-	else{
+	else
+    {
 		transformStamped.transform.translation.x = pred_traj_.poses[1].pose.position.x;
 		transformStamped.transform.translation.y = pred_traj_.poses[1].pose.position.y;
 		transformStamped.transform.translation.z = 0.0;
@@ -372,14 +376,9 @@ void LMPCC::broadcastTF(){
 	}
 
 	state_pub_.sendTransform(transformStamped);
-
-	sensor_msgs::JointState empty;
-	empty.position.resize(4);
-	empty.name ={"front_left_wheel", "front_right_wheel", "rear_left_wheel", "rear_right_wheel"};
-	empty.header.stamp = ros::Time::now();
 }
 
-// update this function 1/controller_frequency
+// This function is called each 1/controller_frequency
 void LMPCC::controlLoop(const ros::TimerEvent &event)
 {
     int N_iter;
@@ -388,11 +387,11 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
     acado_initializeSolver( );
 
-    int trajectory_length = traj.multi_dof_joint_trajectory.points.size();
 	if(!lmpcc_config_->gazebo_simulation_)
 		broadcastTF();
 
-    if (trajectory_length>0) {
+    int trajectory_length = traj.multi_dof_joint_trajectory.points.size();
+    if (trajectory_length > 0) {
         acadoVariables.x[0] = current_state_(0);
         acadoVariables.x[1] = current_state_(1);
         acadoVariables.x[2] = current_state_(2);
@@ -435,7 +434,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
         ComputeCollisionFreeArea();
 
-        if(idx == 1) {
+        if(enable_output_) {
             double smin;
             smin = referencePath.ClosestPointOnPath(current_state_, ss[1], 100, acadoVariables.x[3], window_size_, n_search_points_);
             acadoVariables.x[3] = smin;
@@ -581,7 +580,6 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 		controlled_velocity_.angular.z = acadoVariables.u[1];
 
 		publishPredictedOutput();
-		publishLocalRefPath();
 		broadcastPathPose();
         publishContourError();
 		cost_.data = acado_getObjective();
@@ -592,12 +590,11 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
             publishPredictedTrajectory();
             publishPredictedCollisionSpace();
             publishPosConstraint();
+            publishLocalRefPath();
         }
 
 		if (lmpcc_config_->activate_feedback_message_)
-        {
             publishFeedback(j,te_);
-        }
 
 
         if (lmpcc_config_->activate_timing_output_)
@@ -609,14 +606,14 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
             actionSuccess();
         }
 	}
+
     if(!enable_output_ || acado_getKKT() > 1e-3) {
 		publishZeroJointVelocity();
-		idx = 2; // used to keep computation of the mpc and did not let it move because we set the initial state as the predicted state
 	}
 	else {
-		idx=1;
 		controlled_velocity_pub_.publish(controlled_velocity_);
-        update_trigger.call(emptyCall);
+        update_trigger.call(obstacle_trigger);
+
 	}
 
 }
@@ -643,9 +640,6 @@ void LMPCC::moveGoalCB()
 void LMPCC::moveitGoalCB()
 {
     ROS_INFO_STREAM("Got new MoveIt goal!!!");
-
-    //Reset trajectory index
-    idx = 1;
 
     if(moveit_action_server_->isNewGoalAvailable())
     {

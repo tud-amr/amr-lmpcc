@@ -6,7 +6,7 @@ gazebo_simulation: true
 activate_output: true
 activate_debug_output: false
 activate_timing_output: false
-activate_visualization: true
+activate_visualization: false
 activate_feedback_message: false
 
 # Controller frequency in hz
@@ -53,6 +53,7 @@ global_path:
 collision_avoidance:
     n_obstacles: 2
     delta_max: 2
+    free_space_assumption: false
     occupied_threshold: 70
 
 # OCP parameters

@@ -12,7 +12,8 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_listener.h>
-#include <std_srvs/Empty.h>
+
+#include <lmpcc_msgs/IntTrigger.h>
 
 // eigen includes
 #include <Eigen/Eigen>
@@ -195,7 +196,7 @@ public:
 	nav_msgs::OccupancyGrid environment_grid_;
     nav_msgs::GetMap map_srv_;
 
-    std_srvs::Empty emptyCall;
+    lmpcc_msgs::IntTrigger obstacle_trigger;
 
 	int segment_counter;
 
@@ -298,6 +299,7 @@ private:
 
     double reference_velocity_;
     double collision_free_delta_max_, collision_free_delta_min_;
+    bool free_space_assumption_;
     int occupied_threshold_;
 
     bool enable_output_;

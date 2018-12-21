@@ -7,6 +7,7 @@
 #include <tf/tf.h>
 
 #include <std_srvs/Empty.h>
+#include <lmpcc_msgs/IntTrigger.h>
 
 #include <Eigen/Dense>
 
@@ -54,7 +55,8 @@ public:
     ros::Publisher obst1_path_pub, obst2_path_pub;
 
     std_srvs::Empty emptyCall;
-    ros::ServiceServer update_service;
+    lmpcc_msgs::IntTrigger IntCall;
+    ros::ServiceServer update_service, update_service_int;
 
     ros::Timer loop_timer;
 
@@ -90,6 +92,7 @@ private:
     void visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& obstacles);
     void OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses);
     bool UpdateCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool UpdateCallbackInt(lmpcc_msgs::IntTrigger::Request& request, lmpcc_msgs::IntTrigger::Response& response);
 
     lmpcc_msgs::lmpcc_obstacle FitEllipse(const vision_msgs::Detection3D& object, const double& distance);
     void QuatToZRot(geometry_msgs::Pose& pose);

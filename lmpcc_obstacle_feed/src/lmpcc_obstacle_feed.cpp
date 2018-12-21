@@ -57,11 +57,14 @@ bool ObstacleFeed::initialize()
 
             loop_timer = nh_.createTimer(ros::Duration((double)1/update_rate), &ObstacleFeed::updateObstacles, this);
             update_service = nh_.advertiseService("update_trigger", &ObstacleFeed::UpdateCallback, this);
+            update_service_int = nh_.advertiseService("update_trigger_int", &ObstacleFeed::UpdateCallbackInt, this);
 
             // Check predefined obstacles for errors
             if (!(lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_pose_y_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_pose_heading_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_dim_minor_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_dim_major_.size()))
             {
                 ROS_ERROR("Predefined obstacle arrays are not of the same length!");
+
+                return false;
             }
 
             obstacles_.lmpcc_obstacles.resize(lmpcc_obstacle_feed_config_->obst_pose_x_.size());
@@ -138,6 +141,31 @@ void ObstacleFeed::reconfigureCallback(lmpcc_obstacle_feed::ObstacleFeedConfig& 
     N_obstacles_ = config.N_obstacles;
     distance_ = config.distance_threshold;
     obstacle_size_ = config.obstacle_size;
+}
+
+bool ObstacleFeed::UpdateCallbackInt(lmpcc_msgs::IntTrigger::Request& request, lmpcc_msgs::IntTrigger::Response& response)
+{
+    int rate = request.value;
+
+    for (int obst_it = 0; obst_it < obstacles_.lmpcc_obstacles.size(); obst_it++)
+    {
+        obstacles_.lmpcc_obstacles[obst_it].trajectory.header.stamp = ros::Time::now();
+
+        obstacles_.lmpcc_obstacles[obst_it].pose.position.x = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[0].pose.position.x + ((double) 1/rate )*lmpcc_obstacle_feed_config_->v_x_.at(obst_it);
+        obstacles_.lmpcc_obstacles[obst_it].pose.position.y = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[0].pose.position.y + ((double) 1/rate )*lmpcc_obstacle_feed_config_->v_y_.at(obst_it);
+
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = obstacles_.lmpcc_obstacles[obst_it].pose.position.x + dt_*traj_it*lmpcc_obstacle_feed_config_->v_x_.at(obst_it);
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = obstacles_.lmpcc_obstacles[obst_it].pose.position.y + dt_*traj_it*lmpcc_obstacle_feed_config_->v_y_.at(obst_it);
+        }
+    }
+
+    return true;
 }
 
 bool ObstacleFeed::UpdateCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
@@ -325,8 +353,8 @@ lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection
 {
 
     lmpcc_msgs::lmpcc_obstacle ellipse;
-    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.major_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
     ellipse.distance = distance;
     ellipse.pose = object.bbox.center;
     return ellipse;
