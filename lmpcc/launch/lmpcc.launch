@@ -15,14 +15,11 @@
             <rosparam command="load" file="$(arg config)/config/jackal.yaml" />
     </node>
 
+
     # load Cartesian controller config
     <rosparam command="load" file="$(find lmpcc)/config/lmpcc_config_parameter.yaml"/>
-    <rosparam command="load" file="$(find lmpcc)/config/local_map_params.yaml"/>
 
-    <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen">
-    <!--        <rosparam command="load" file="$(find lmpcc)/config/local_map_params.yaml" /> -->
-    	<rosparam file="$(find lmpcc)/config/local_map_params.yaml" command="load" />
-    </node>
+    <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
 
     <!-- configured rviz -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" />

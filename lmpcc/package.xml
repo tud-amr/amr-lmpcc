@@ -24,6 +24,7 @@
   <depend>kdl_parser</depend>
   <depend>moveit_core</depend>
   <depend>nav_msgs</depend>
+  <depend>costmap_2d</depend>
   <depend>nav_core</depend>
   <depend>orocos_kdl</depend>
   <depend>pluginlib</depend>

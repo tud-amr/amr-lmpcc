@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     moveit_core
     nav_msgs
-    nav_core
     roscpp
     roslint
     sensor_msgs
@@ -70,7 +69,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core nav_core lmpcc_msgs
+  CATKIN_DEPENDS actionlib_msgs cob_srvs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core lmpcc_msgs
   DEPENDS Boost
   INCLUDE_DIRS include/${PROJECT_NAME}
   LIBRARIES lmpcc_configuration lmpcc

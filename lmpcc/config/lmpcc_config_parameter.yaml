@@ -1,12 +1,12 @@
 # Simulation mode
-simulation_mode: false
+simulation_mode: true
 gazebo_simulation: true
 
 # Debug modes
 activate_output: true
 activate_debug_output: false
 activate_timing_output: false
-activate_visualization: true
+activate_visualization: false
 activate_feedback_message: false
 
 # Controller frequency in hz

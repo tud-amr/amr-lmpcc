@@ -70,9 +70,8 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/GetMap.h>
 
-// costmap
-#include <costmap_2d/costmap_2d_ros.h>
-#include <costmap_2d/costmap_2d.h>
+//#include <costmap_2d/costmap_2d_ros.h>
+//#include <costmap_2d/costmap_2d.h>
 
 // lmpcc messages
 #include <lmpcc_msgs/lmpcc_feedback.h>
@@ -94,7 +93,6 @@
 //splines
 #include <tkspline/spline.h>
 #include <lmpcc/Clothoid.h>
-
 
 typedef double real_t;
 
@@ -229,7 +227,7 @@ public:
 
     ReferencePath referencePath;
 
-    costmap_2d::Costmap2DROS* local_map_;
+//    costmap_2d::Costmap2DROS* local_map_;
 
 private:
     ros::NodeHandle nh;
