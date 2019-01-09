@@ -70,6 +70,10 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/GetMap.h>
 
+// costmap
+#include <costmap_2d/costmap_2d_ros.h>
+#include <costmap_2d/costmap_2d.h>
+
 // lmpcc messages
 #include <lmpcc_msgs/lmpcc_feedback.h>
 #include <lmpcc_msgs/lmpcc_obstacle.h>
@@ -224,6 +228,8 @@ public:
     std::vector<double> collision_free_C1, collision_free_C2, collision_free_C3, collision_free_C4, collision_free_a1x ,collision_free_a1y, collision_free_a2x ,collision_free_a2y, collision_free_a3x ,collision_free_a3y, collision_free_a4x ,collision_free_a4y , collision_free_xmin, collision_free_xmax, collision_free_ymin, collision_free_ymax;
 
     ReferencePath referencePath;
+
+    costmap_2d::Costmap2DROS* local_map_;
 
 private:
     ros::NodeHandle nh;

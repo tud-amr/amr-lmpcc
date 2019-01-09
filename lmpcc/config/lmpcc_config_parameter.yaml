@@ -6,7 +6,7 @@ gazebo_simulation: true
 activate_output: true
 activate_debug_output: false
 activate_timing_output: false
-activate_visualization: false
+activate_visualization: true
 activate_feedback_message: false
 
 # Controller frequency in hz
