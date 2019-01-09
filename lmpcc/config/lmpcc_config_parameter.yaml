@@ -1,5 +1,5 @@
 # Simulation mode
-simulation_mode: true
+simulation_mode: false
 gazebo_simulation: true
 
 # Debug modes

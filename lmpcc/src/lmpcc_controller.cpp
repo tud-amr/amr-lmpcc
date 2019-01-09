@@ -211,7 +211,7 @@ bool LMPCC::initialize()
         local_map_ = nullptr;
         local_map_ = new costmap_2d::Costmap2DROS("local_map", tf);
 
-//        local_map_->start();
+        local_map_->start();
 
         ROS_INFO("Local map initialized");
 
