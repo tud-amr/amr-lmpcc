@@ -1,5 +1,5 @@
 # Simulation mode
-simulation_mode: false
+#simulation_mode: false             # Is set in launch file!
 gazebo_simulation: true
 
 # Debug modes
@@ -52,6 +52,7 @@ global_path:
 # Collision avoidance parameters
 collision_avoidance:
     n_obstacles: 2
+#    local_map: true                # Is set in launch file!
     delta_max: 2
     free_space_assumption: false
     occupied_threshold: 70

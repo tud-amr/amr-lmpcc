@@ -205,7 +205,7 @@ public:
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
 	nav_msgs::Path local_spline_traj1_,local_spline_traj2_,local_spline_traj3_,local_spline_traj4_,local_spline_traj5_;
-	nav_msgs::OccupancyGrid environment_grid_, local_map_;
+	nav_msgs::OccupancyGrid global_map_, local_map_, static_map_;
     nav_msgs::GetMap map_srv_;
 
     lmpcc_msgs::IntTrigger obstacle_trigger;
@@ -312,6 +312,7 @@ private:
     double repulsive_weight_;
 
     double reference_velocity_;
+    bool use_local_map_;
     double collision_free_delta_max_, collision_free_delta_min_;
     bool free_space_assumption_;
     int occupied_threshold_;
