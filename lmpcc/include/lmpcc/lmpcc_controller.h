@@ -68,6 +68,7 @@
 // navigation messages
 #include <nav_msgs/Path.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <map_msgs/OccupancyGridUpdate.h>
 #include <nav_msgs/GetMap.h>
 
 //#include <costmap_2d/costmap_2d_ros.h>
@@ -144,6 +145,10 @@ public:
      */
     void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
 
+    void LocalMapCallBack(const nav_msgs::OccupancyGrid local_map);
+
+    void LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update);
+
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
      * @param from: source frame from find transformation
@@ -186,6 +191,11 @@ public:
     // subscriber for obstacle feed
     ros::Subscriber obstacle_feed_sub_;
 
+    // subscriber for obstacle feed
+    ros::Subscriber local_map_sub_;
+    // subscriber for obstacle feed
+    ros::Subscriber local_map_updates_sub_;
+
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
@@ -195,7 +205,7 @@ public:
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
 	nav_msgs::Path local_spline_traj1_,local_spline_traj2_,local_spline_traj3_,local_spline_traj4_,local_spline_traj5_;
-	nav_msgs::OccupancyGrid environment_grid_;
+	nav_msgs::OccupancyGrid environment_grid_, local_map_;
     nav_msgs::GetMap map_srv_;
 
     lmpcc_msgs::IntTrigger obstacle_trigger;

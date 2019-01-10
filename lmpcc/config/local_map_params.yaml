@@ -1,7 +1,7 @@
 global_frame: map
 robot_base_frame: base_link
 update_frequency: 20.0
-publish_frequency: 5.0
+publish_frequency: 10.0
 width: 10.0
 height: 10.0
 resolution: 0.05
@@ -33,5 +33,5 @@ obstacles_layer:
   observation_sources: scan2 scan3
   #  scan1: {sensor_frame: hokuyo_base_scan, data_type: LaserScan, topic: hokuyo, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}
 #  scan1: {sensor_frame: VLP16 , data_type: LaserScan, topic: scan, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}
-  scan2: {sensor_frame: VLP16 , data_type: LaserScan, topic: velodyne_scan1, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}
+  scan2: {sensor_frame: VLP16 , data_type: LaserScan, topic: velodyne_scan1, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 10, raytrace_range: 3.0}
   scan3: {sensor_frame: VLP16 , data_type: LaserScan, topic: velodyne_scan2, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}

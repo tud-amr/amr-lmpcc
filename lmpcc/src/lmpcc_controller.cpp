@@ -17,15 +17,14 @@ void LMPCC::spinNode()
     ros::spin();
 }
 
-// disallocated memory
+// Free memory
 void LMPCC::clearDataMember()
 {
     last_position_ = Eigen::VectorXd(3);
     last_velocity_ = Eigen::VectorXd(3);
-
 }
 
-// initialize all helper class of predictive control and subscibe joint state and publish controlled joint velocity
+// Initialization of the LMPCC planer
 bool LMPCC::initialize()
 {
     // make sure node is still running
@@ -119,6 +118,8 @@ bool LMPCC::initialize()
 	    /** Subscribers **/
         robot_state_sub_ = nh.subscribe(lmpcc_config_->robot_state_, 1, &LMPCC::StateCallBack, this);
         obstacle_feed_sub_ = nh.subscribe(lmpcc_config_->ellipse_objects_feed_, 1, &LMPCC::ObstacleCallBack, this);
+        local_map_sub_ = nh.subscribe("costmap_node/costmap/costmap", 1, &LMPCC::LocalMapCallBack, this);
+        local_map_updates_sub_ = nh.subscribe("costmap_node/costmap/costmap_updates", 1, &LMPCC::LocalMapUpdatesCallBack, this);
 
         /** Publishers **/
         controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(cmd_topic_,1);
@@ -1021,6 +1022,31 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
     {
         obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
+}
+
+void LMPCC::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map)
+{
+    local_map_ = local_map;
+
+    environment_grid_ = local_map_;
+
+    ROS_INFO("local map update received!");
+}
+
+void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update)
+{
+    int index = 0;
+    for(int y = local_map_update.y; y < local_map_update.y + local_map_update.height; y++)
+    {
+        for(int x = local_map_update.x; x < local_map_update.x + local_map_update.width; x++)
+        {
+            local_map_.data[ local_map_.info.width*y + x ] = local_map_update.data[index++];
+        }
+    }
+
+    environment_grid_ = local_map_;
+
+    ROS_INFO("local map update received!");
 }
 
 void LMPCC::publishZeroJointVelocity()

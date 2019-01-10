@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
     moveit_core
     nav_msgs
+    map_msgs
     roscpp
     roslint
     sensor_msgs
@@ -62,6 +63,7 @@ generate_messages(
     sensor_msgs
     std_msgs
     nav_msgs
+    map_msgs
     shape_msgs
     visualization_msgs
     moveit_msgs
