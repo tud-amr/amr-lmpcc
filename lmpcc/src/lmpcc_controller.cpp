@@ -1043,7 +1043,7 @@ void LMPCC::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map)
 {
     local_map_ = local_map;
 
-    ROS_INFO("local map update received!");
+//    ROS_INFO("local map update received!");
 }
 
 void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update)
@@ -1057,7 +1057,7 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
         }
     }
 
-    ROS_INFO("local map update received!");
+//    ROS_INFO("local map update received!");
 }
 
 void LMPCC::publishZeroJointVelocity()

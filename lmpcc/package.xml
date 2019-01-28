@@ -26,7 +26,6 @@
   <depend>nav_msgs</depend>
   <depend>map_msgs</depend>
   <depend>costmap_2d</depend>
-  <depend>nav_core</depend>
   <depend>orocos_kdl</depend>
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
