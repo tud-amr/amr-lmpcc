@@ -63,6 +63,7 @@ bool LMPCC::initialize()
         slack_weight_ = lmpcc_config_->slack_weight_;
         repulsive_weight_ = lmpcc_config_->repulsive_weight_;
         reference_velocity_ = lmpcc_config_->reference_velocity_;
+        use_local_map_ = lmpcc_config_->use_local_map_;
         collision_free_delta_max_ = lmpcc_config_->delta_max_;
         free_space_assumption_ = lmpcc_config_->free_space_assumption_;
         occupied_threshold_ = lmpcc_config_->occupied_threshold_;
@@ -293,6 +294,7 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
     repulsive_weight_ = config.WR;
 
     reference_velocity_ = config.vRef;
+    use_local_map_ = config.localMap;
     collision_free_delta_max_ = config.deltaMax;
     free_space_assumption_ = config.freeSpace;
     occupied_threshold_ = config.occThres;
@@ -304,6 +306,10 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
     //Search window parameters
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
+
+    if (use_local_map_ && lmpcc_config_->simulation_mode_){
+        ROS_ERROR("Local map is only possible with real sensor data!");
+    }
 }
 
 void LMPCC::computeEgoDiscs()
@@ -668,7 +674,7 @@ void LMPCC::moveitGoalCB()
         if (map_service_.call(map_srv_))
         {
             ROS_ERROR("Service GetMap succeeded.");
-            environment_grid_ = map_srv_.response.map;
+            global_map_ = map_srv_.response.map;
         }
         else
         {
@@ -708,6 +714,15 @@ void LMPCC::ComputeCollisionFreeArea()
 
     int search_steps = 10;
 
+    if (use_local_map_ && !lmpcc_config_->simulation_mode_)
+    {
+        static_map_ = local_map_;
+    }
+    else
+    {
+        static_map_ = global_map_;
+    }
+
     collision_free_delta_min_ = collision_free_delta_max_;
 
     // Iterate over points in prediction horizon to search for collision free circles
@@ -720,8 +735,8 @@ void LMPCC::ComputeCollisionFreeArea()
         psi_path = acadoVariables.x[N_it * ACADO_NX + 2];
 
         // Find corresponding index of the point in the occupancy grid map
-        x_path_i = (int) round((x_path - environment_grid_.info.origin.position.x)/environment_grid_.info.resolution);
-        y_path_i = (int) round((y_path - environment_grid_.info.origin.position.y)/environment_grid_.info.resolution);
+        x_path_i = (int) round((x_path - static_map_.info.origin.position.x)/static_map_.info.resolution);
+        y_path_i = (int) round((y_path - static_map_.info.origin.position.y)/static_map_.info.resolution);
 
         // Compute the constraint
         computeConstraint(x_path_i,y_path_i,x_path, y_path, psi_path, N_it);
@@ -751,8 +766,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
     int r_max_i_min, r_max_i_max;
 
     // define maximum search distance in occupancy grid cells, based on discretization
-    r_max_i_min = (int) round(-collision_free_delta_max_ /environment_grid_.info.resolution);
-    r_max_i_max = (int) round(collision_free_delta_max_/environment_grid_.info.resolution);
+    r_max_i_min = (int) round(-collision_free_delta_max_ /static_map_.info.resolution);
+    r_max_i_max = (int) round(collision_free_delta_max_/static_map_.info.resolution);
 
     // Initialize found rectabgle values with maxium search distance
     x_min = r_max_i_min;
@@ -775,7 +790,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_y_it = std::max(-search_distance,y_min); search_y_it < std::min(search_distance,y_max); search_y_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (y_i + search_y_it > environment_grid_.info.height){search_y_it = environment_grid_.info.height - y_i;}
+                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
                 if (y_i + search_y_it < 0){search_y_it = -y_i;}
                 // Assign value if occupied cell is found
 //                if (getOccupancy(x_i + search_x, y_i + search_y_it) > occupied_threshold_)
@@ -793,7 +808,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_y_it = std::max(-search_distance,y_min); search_y_it < std::min(search_distance,y_max); search_y_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (y_i + search_y_it > environment_grid_.info.height){search_y_it = environment_grid_.info.height - y_i;}
+                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
                 if (y_i + search_y_it < 0){search_y_it = -y_i;}
                 // Assign value if occupied cell is found
 //              if (getOccupancy(x_i + search_x, y_i + search_y_it) > occupied_threshold_)
@@ -811,7 +826,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_x_it = std::max(-search_distance,x_min); search_x_it < std::min(search_distance,x_max); search_x_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (x_i + search_x_it > environment_grid_.info.width){search_x_it = environment_grid_.info.width - x_i;}
+                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
                 if (x_i + search_x_it < 0){search_x_it = -x_i;}
                 // Assign value if occupied cell is found
 //                if (getOccupancy(x_i + search_x_it, y_i + search_y) > occupied_threshold_)
@@ -829,7 +844,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_x_it = std::max(-search_distance,x_min); search_x_it < std::min(search_distance,x_max); search_x_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (x_i + search_x_it > environment_grid_.info.width){search_x_it = environment_grid_.info.width - x_i;}
+                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
                 if (x_i + search_x_it < 0){search_x_it = -x_i;}
                 // Assign value if occupied cell is found
 //                if (getOccupancy(x_i + search_x_it, y_i + search_y) > occupied_threshold_)
@@ -847,10 +862,10 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
     }
 
     // Assign the rectangle values
-    collision_free_xmin[N] = x_min*environment_grid_.info.resolution + 0.35;
-    collision_free_xmax[N] = x_max*environment_grid_.info.resolution - 0.35;
-    collision_free_ymin[N] = y_min*environment_grid_.info.resolution + 0.35;
-    collision_free_ymax[N] = y_max*environment_grid_.info.resolution - 0.35;
+    collision_free_xmin[N] = x_min*static_map_.info.resolution + 0.35;
+    collision_free_xmax[N] = x_max*static_map_.info.resolution - 0.35;
+    collision_free_ymin[N] = y_min*static_map_.info.resolution + 0.35;
+    collision_free_ymax[N] = y_max*static_map_.info.resolution - 0.35;
 
     std::vector<double> sqx(4,0), sqy(4,0);
 
@@ -909,7 +924,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
 
 int LMPCC::getOccupancy(int x_i, int y_i)
 {
-    return environment_grid_.data[environment_grid_.info.width*y_i + x_i];
+    return static_map_.data[static_map_.info.width*y_i + x_i];
 }
 
 int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi)
@@ -917,7 +932,7 @@ int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, dou
     int x_search_rotated = (int) round(cos(psi)*search_x - sin(psi)*search_y);
     int y_search_rotated = (int) round(sin(psi)*search_x + cos(psi)*search_y);
 
-    return environment_grid_.data[environment_grid_.info.width*(y_i + y_search_rotated) + (x_i + x_search_rotated)];
+    return static_map_.data[static_map_.info.width*(y_i + y_search_rotated) + (x_i + x_search_rotated)];
 }
 
 void LMPCC::movePreemptCB()
@@ -1028,8 +1043,6 @@ void LMPCC::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map)
 {
     local_map_ = local_map;
 
-    environment_grid_ = local_map_;
-
     ROS_INFO("local map update received!");
 }
 
@@ -1043,8 +1056,6 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
             local_map_.data[ local_map_.info.width*y + x ] = local_map_update.data[index++];
         }
     }
-
-    environment_grid_ = local_map_;
 
     ROS_INFO("local map update received!");
 }

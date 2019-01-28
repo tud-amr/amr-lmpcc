@@ -100,6 +100,7 @@ public:
 
     /** Number of dynamic obstacles **/
     int n_obstacles_;
+    bool use_local_map_;
     double delta_max_;
     bool free_space_assumption_;
     int occupied_threshold_;

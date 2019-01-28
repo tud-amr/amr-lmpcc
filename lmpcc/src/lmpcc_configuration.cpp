@@ -175,6 +175,13 @@ bool LMPCC_configuration::initialize()
         return false;
     }
 
+    // Occupation threshold of searched occupancy grid
+    if (!nh_config.getParam ("collision_avoidance/local_map", use_local_map_) )
+    {
+        ROS_WARN(" Parameter '/collision_avoidance/local_map not set on %s node" , ros::this_node::getName().c_str());
+        return false;
+    }
+
     // Maxium search distance of area free of static obstacles
     if (!nh_config.getParam ("collision_avoidance/delta_max", delta_max_) )
     {
