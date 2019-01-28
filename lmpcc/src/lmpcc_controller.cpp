@@ -931,14 +931,13 @@ int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, dou
     int x_search_rotated = (int) round(cos(psi) * search_x - sin(psi) * search_y);
     int y_search_rotated = (int) round(sin(psi) * search_x + cos(psi) * search_y);
 
-    if (x_search_rotated < static_map_.info.width && y_search_rotated < static_map_.info.height &&
-        x_search_rotated > 0 && y_search_rotated > 0) {
-        return static_map_.data[static_map_.info.width * (y_i + y_search_rotated) + (x_i + x_search_rotated)];
-    }
-    else {
+    if (x_search_rotated > static_map_.info.width || y_search_rotated > static_map_.info.height ||
+        x_search_rotated < 0 || y_search_rotated < 0) {
         return (int) 100;
     }
-
+    else {
+        return static_map_.data[static_map_.info.width * (y_i + y_search_rotated) + (x_i + x_search_rotated)];
+    }
 }
 
 void LMPCC::movePreemptCB()
