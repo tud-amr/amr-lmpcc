@@ -790,8 +790,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_y_it = std::max(-search_distance,y_min); search_y_it < std::min(search_distance,y_max); search_y_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
-                if (y_i + search_y_it < 0){search_y_it = -y_i;}
+//                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
+//                if (y_i + search_y_it < 0){search_y_it = -y_i;}
                 // Assign value if occupied cell is found
 //                if (getOccupancy(x_i + search_x, y_i + search_y_it) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x, y_i, search_y_it, psi_path) > occupied_threshold_)
@@ -808,8 +808,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_y_it = std::max(-search_distance,y_min); search_y_it < std::min(search_distance,y_max); search_y_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
-                if (y_i + search_y_it < 0){search_y_it = -y_i;}
+//                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
+//                if (y_i + search_y_it < 0){search_y_it = -y_i;}
                 // Assign value if occupied cell is found
 //              if (getOccupancy(x_i + search_x, y_i + search_y_it) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x, y_i, search_y_it, psi_path) > occupied_threshold_)
@@ -826,8 +826,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_x_it = std::max(-search_distance,x_min); search_x_it < std::min(search_distance,x_max); search_x_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
-                if (x_i + search_x_it < 0){search_x_it = -x_i;}
+//                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
+//                if (x_i + search_x_it < 0){search_x_it = -x_i;}
                 // Assign value if occupied cell is found
 //                if (getOccupancy(x_i + search_x_it, y_i + search_y) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x_it, y_i, search_y, psi_path) > occupied_threshold_)
@@ -844,8 +844,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             for (int search_x_it = std::max(-search_distance,x_min); search_x_it < std::min(search_distance,x_max); search_x_it++)
             {
                 // Correct search iterator if out of map bounds
-                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
-                if (x_i + search_x_it < 0){search_x_it = -x_i;}
+//                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
+//                if (x_i + search_x_it < 0){search_x_it = -x_i;}
                 // Assign value if occupied cell is found
 //                if (getOccupancy(x_i + search_x_it, y_i + search_y) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x_it, y_i, search_y, psi_path) > occupied_threshold_)
@@ -927,12 +927,18 @@ int LMPCC::getOccupancy(int x_i, int y_i)
     return static_map_.data[static_map_.info.width*y_i + x_i];
 }
 
-int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi)
-{
-    int x_search_rotated = (int) round(cos(psi)*search_x - sin(psi)*search_y);
-    int y_search_rotated = (int) round(sin(psi)*search_x + cos(psi)*search_y);
+int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi) {
+    int x_search_rotated = (int) round(cos(psi) * search_x - sin(psi) * search_y);
+    int y_search_rotated = (int) round(sin(psi) * search_x + cos(psi) * search_y);
 
-    return static_map_.data[static_map_.info.width*(y_i + y_search_rotated) + (x_i + x_search_rotated)];
+    if (x_search_rotated < static_map_.info.width && y_search_rotated < static_map_.info.height &&
+        x_search_rotated > 0 && y_search_rotated > 0) {
+        return static_map_.data[static_map_.info.width * (y_i + y_search_rotated) + (x_i + x_search_rotated)];
+    }
+    else {
+        return (int) 100;
+    }
+
 }
 
 void LMPCC::movePreemptCB()
