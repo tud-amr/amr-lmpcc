@@ -926,7 +926,7 @@ int LMPCC::getOccupancy(int x_i, int y_i)
 {
     return static_map_.data[static_map_.info.width*y_i + x_i];
 }
-
+//Access the occupancy grid map according with the robot position and orientation value 100 is occupied 0 for free
 int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi)
 {
     int x_search_rotated = (int) round(cos(psi)*search_x - sin(psi)*search_y);
