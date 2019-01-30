@@ -1,6 +1,6 @@
 # Obstacle feed mode (0 = sensor mode, 1 = OptiTrack mode, 2 = predefined obstacles)
 # need to recompile after changing!
-obstacle_feed_mode: 2
+obstacle_feed_mode: 0
 
 # Debugging info
 activate_debug_output: true
@@ -14,7 +14,7 @@ prediction_horizon: 5
 # Define the coordinate frames
 frames:
     planning_frame: map             # For predefined obstacles
-    robot_frame: base_link          # For actual measured obstacles
+    robot_frame: odom          # For actual measured obstacles
 
 publish:
     obstacles: ellipse_objects_feed
@@ -22,11 +22,11 @@ publish:
 subscribe:
     detections: detection_3d
     optitrack: future_obj_track
-    pedestrians: /spencer/perception/tracked_persons_confirmed_by_HOG_or_upper_body
+    pedestrians: /spencer/perception/tracked_persons
 
 # Detection criteria
 detected_obstacles:
-    distance_threshold: 8
+    distance_threshold: 100
     obstacle_threshold: 10
     min_obstacle_volume: 0.03
     max_obstacle_volume: 1.0

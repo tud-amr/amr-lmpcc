@@ -111,6 +111,7 @@ bool ObstacleFeed::initialize()
             ROS_WARN("In this mode, clustered pointcloud obstacles are forwarded");
 
             obstacles_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_detections_, 1, &ObstacleFeed::detectionsCallback, this);
+            pedestrians_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_pedestrians_, 1, &ObstacleFeed::pedestriansCallback, this);
         }
         else{
             ROS_ERROR("UNDEFINED MODE");
@@ -288,7 +289,7 @@ void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objec
 
 void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person)
 {
-    //  ROS_INFO_STREAM("Obstacles callback!");
+    ROS_INFO_STREAM("Pedestrian callback!");
 
     std::vector<uint32_t> objectIDs;
     std::vector<double> objectDistances;
@@ -300,6 +301,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
     lmpcc_msgs::lmpcc_obstacle ellipse;
     vision_msgs::Detection3D ped;
 
+
     for (int object_it = 0; object_it < person.tracks.size(); object_it++)
     {
 //        // SHIFTING ALL OBSTACLES IN SPACE
@@ -308,17 +310,19 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         // Compute distance of obstacle to robot
         distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x,2) + pow(person.tracks[object_it].pose.pose.position.y,2));
         ped.bbox.center.position.x = person.tracks[object_it].pose.pose.position.x;
-        ped.bbox.center.position.y = person.tracks[object_it].pose.pose.orientation.x;
-        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.y;
+        ped.bbox.center.position.y = person.tracks[object_it].pose.pose.position.y;
+        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.x;
+        ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.y;
         ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.z;
         ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.w;
-
+        ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
 
         // If distance is smaller than defined bound, add to obstacles
-        if (distance < distance_ ){
+        //if (distance < distance_ ){
             local_objects.detections.push_back(ped);
             objectDistances.push_back(distance);
-        }
+            ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
+        //}
     }
 
     // For all obstacles, fit an ellipse
