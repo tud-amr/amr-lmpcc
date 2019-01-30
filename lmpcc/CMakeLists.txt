@@ -26,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
     shape_msgs
     moveit_msgs
     lmpcc_msgs
+    spencer_tracking_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)

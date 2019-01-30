@@ -31,6 +31,7 @@
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
+  <depend>spencer_tracking_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
   <depend>lmpcc_msgs</depend>
