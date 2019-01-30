@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   trajectory_msgs
   vision_msgs
   lmpcc_msgs
+  spencer_tracking_msgs
 )
 
 ## System dependencies are found with CMake's conventions

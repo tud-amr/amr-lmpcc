@@ -29,6 +29,7 @@ publish:
 subscribe:
     robot_state:  robot_state
     obstacles:    ellipse_objects_feed
+    pedestrians:    /spencer/perception/tracked_persons_confirmed_by_HOG_or_upper_body
 
 # Coordinate frame definitions
 frames:

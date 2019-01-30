@@ -22,6 +22,7 @@ publish:
 subscribe:
     detections: detection_3d
     optitrack: future_obj_track
+    pedestrians: /spencer/perception/tracked_persons_confirmed_by_HOG_or_upper_body
 
 # Detection criteria
 detected_obstacles:

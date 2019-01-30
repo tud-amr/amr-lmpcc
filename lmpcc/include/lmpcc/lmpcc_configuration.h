@@ -81,6 +81,7 @@ public:
     std::string cmd_sim_;
     std::string robot_state_;
     std::string ellipse_objects_feed_;
+    std::string pedestrians_objects_feed_;
 
     /** coordinate frame declarations **/
     std::string robot_base_link_;

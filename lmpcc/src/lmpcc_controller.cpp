@@ -119,6 +119,7 @@ bool LMPCC::initialize()
 	    /** Subscribers **/
         robot_state_sub_ = nh.subscribe(lmpcc_config_->robot_state_, 1, &LMPCC::StateCallBack, this);
         obstacle_feed_sub_ = nh.subscribe(lmpcc_config_->ellipse_objects_feed_, 1, &LMPCC::ObstacleCallBack, this);
+        pedestrian_feed_sub_ = nh.subscribe(lmpcc_config_->pedestrians_objects_feed_, 1, &LMPCC::PedestrianCallBack, this);
         local_map_sub_ = nh.subscribe("costmap_node/costmap/costmap", 1, &LMPCC::LocalMapCallBack, this);
         local_map_updates_sub_ = nh.subscribe("costmap_node/costmap/costmap_updates", 1, &LMPCC::LocalMapUpdatesCallBack, this);
 
@@ -789,11 +790,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             search_x = -search_distance;
             for (int search_y_it = std::max(-search_distance,y_min); search_y_it < std::min(search_distance,y_max); search_y_it++)
             {
-                // Correct search iterator if out of map bounds
-                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
-                if (y_i + search_y_it < 0){search_y_it = -y_i;}
                 // Assign value if occupied cell is found
-//                if (getOccupancy(x_i + search_x, y_i + search_y_it) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x, y_i, search_y_it, psi_path) > occupied_threshold_)
                 {
                     x_min = search_x;
@@ -807,11 +804,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             search_x = search_distance;
             for (int search_y_it = std::max(-search_distance,y_min); search_y_it < std::min(search_distance,y_max); search_y_it++)
             {
-                // Correct search iterator if out of map bounds
-                if (y_i + search_y_it > static_map_.info.height){search_y_it = static_map_.info.height - y_i;}
-                if (y_i + search_y_it < 0){search_y_it = -y_i;}
+
                 // Assign value if occupied cell is found
-//              if (getOccupancy(x_i + search_x, y_i + search_y_it) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x, y_i, search_y_it, psi_path) > occupied_threshold_)
                 {
                     x_max = search_x;
@@ -825,11 +819,8 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             search_y = -search_distance;
             for (int search_x_it = std::max(-search_distance,x_min); search_x_it < std::min(search_distance,x_max); search_x_it++)
             {
-                // Correct search iterator if out of map bounds
-                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
-                if (x_i + search_x_it < 0){search_x_it = -x_i;}
+
                 // Assign value if occupied cell is found
-//                if (getOccupancy(x_i + search_x_it, y_i + search_y) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x_it, y_i, search_y, psi_path) > occupied_threshold_)
                 {
                     y_min = search_y;
@@ -843,11 +834,7 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
             search_y = search_distance;
             for (int search_x_it = std::max(-search_distance,x_min); search_x_it < std::min(search_distance,x_max); search_x_it++)
             {
-                // Correct search iterator if out of map bounds
-                if (x_i + search_x_it > static_map_.info.width){search_x_it = static_map_.info.width - x_i;}
-                if (x_i + search_x_it < 0){search_x_it = -x_i;}
                 // Assign value if occupied cell is found
-//                if (getOccupancy(x_i + search_x_it, y_i + search_y) > occupied_threshold_)
                 if (getRotatedOccupancy(x_i, search_x_it, y_i, search_y, psi_path) > occupied_threshold_)
                 {
                     y_max = search_y;
@@ -903,36 +890,24 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
     collision_free_C2[N] = sqx[1]*collision_free_a2x[N] + sqy[1]*collision_free_a2y[N];
     collision_free_C3[N] = sqx[2]*collision_free_a3x[N] + sqy[2]*collision_free_a3y[N];
     collision_free_C4[N] = sqx[3]*collision_free_a4x[N] + sqy[3]*collision_free_a4y[N];
-
-//    if (N == ACADO_N - 1)
-//    {
-//        ROS_INFO_STREAM("x = " << x_path << " y = " << y_path << " psi = " << psi_path);
-//        ROS_INFO_STREAM("x_i = " << x_i << " y_i = " << y_i);
-//        ROS_INFO_STREAM("xmin_i = " << x_min << " x_max_i = " << x_max << " ymin_i = " << y_min << " y_max_i = " << y_max);
-//        ROS_INFO_STREAM("xmin = " << collision_free_xmin[N] << " x_max = " << collision_free_xmax[N] << " ymin = " << collision_free_ymin[N] << " y_max = " << collision_free_ymax[N]);
-//        ROS_INFO_STREAM("xmin_R = " << collision_free_xmin[N] << " xmax_R = " << collision_free_xmax[N] << " ymin_R = " << collision_free_ymin[N] << " ymax_R = " << collision_free_ymax[N]);
-//        ROS_INFO_STREAM("sq[0] = [" << sqx[0] << ", " << sqy[0] << "], sq[1] = [" << sqx[1] << ", " << sqy[1] << "], sq[2] = [" << sqx[2] << ", " << sqy[2] << "], sq[3] = [" << sqx[3] << ", " << sqy[3] << "]" );
-//        ROS_INFO_STREAM("t1 = [" << t1[0] << ", " << t1[1] << "], t2 = [" << t2[0] << ", " << t2[1] << "], t3 = [" << t3[0] << ", " << t3[1] << "], t4 = [" << t4[0] << ", " << t4[1] << "]" );
-//        ROS_INFO_STREAM("collision_free_a1 = [" << collision_free_a1x[N] << ", " << collision_free_a1y[N] << "], collision_free_a2 = [" << collision_free_a2x[N] << ", " << collision_free_a2y[N] << "], collision_free_a3 = [" << collision_free_a3x[N] << ", " << collision_free_a3y[N] << "], collision_free_a4 = [" << collision_free_a4x[N] << ", " << collision_free_a4y[N] << "]" );
-//        ROS_INFO_STREAM("collision_free_C1 = [" << collision_free_C1[N] << "], collision_free_C2 = [" << collision_free_C2[N] << "], collision_free_C3 = [" << collision_free_C3[N] << "], collision_free_C4 = [" << collision_free_C4[N] << "]" );
-//    }
-
-
-//    ROS_INFO_STREAM("xi = " << x_i << " yi = " << y_i );
-//    ROS_INFO_STREAM("xmin = " << collision_free_xmin[N] << " x_max = " << collision_free_xmax[N] << " ymin = " << collision_free_ymin[N] << " y_max = " << collision_free_ymax[N] );
 }
 
 int LMPCC::getOccupancy(int x_i, int y_i)
 {
     return static_map_.data[static_map_.info.width*y_i + x_i];
 }
-//Access the occupancy grid map according with the robot position and orientation value 100 is occupied 0 for free
-int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi)
-{
-    int x_search_rotated = (int) round(cos(psi)*search_x - sin(psi)*search_y);
-    int y_search_rotated = (int) round(sin(psi)*search_x + cos(psi)*search_y);
 
-    return static_map_.data[static_map_.info.width*(y_i + y_search_rotated) + (x_i + x_search_rotated)];
+int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi) {
+    int x_search_rotated = (int) round(cos(psi) * search_x - sin(psi) * search_y);
+    int y_search_rotated = (int) round(sin(psi) * search_x + cos(psi) * search_y);
+
+    if ((x_i + x_search_rotated) > static_map_.info.width || (y_i + y_search_rotated) > static_map_.info.height ||
+            (x_i + x_search_rotated) < 0 || (y_i + y_search_rotated) < 0) {
+        return (int) 100;
+    }
+    else {
+        return static_map_.data[static_map_.info.width * (y_i + y_search_rotated) + (x_i + x_search_rotated)];
+    }
 }
 
 void LMPCC::movePreemptCB()
@@ -968,6 +943,7 @@ void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
     current_state_(2) =    msg->orientation.z;
 }
 
+// This function is used in combination with the matlab kalman filter for person tracking using the OptiTrack system
 //void LMPCC::ObstacleCallBack(const nav_msgs::Path& predicted_path)
 //{
 //    if (predicted_path.poses.size() != lmpcc_config_->discretization_intervals_)
@@ -1039,11 +1015,66 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
     }
 }
 
+void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& person)
+{
+    lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
+    total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
+
+    total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
+
+    ROS_INFO_STREAM("-- Received # pedestrians: " << person.TrackedPerson.size());
+    ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
+    double ysqr, t3, t4;
+
+    for (int obst_it = 0; obst_it < std::min(person.TrackedPerson.size(),lmpcc_config_->n_obstacles_); obst_it++)
+    {
+        total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = person[obst_it].pose.pose.position.x;
+        total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = person[obst_it].pose.pose.position.y;
+
+        // Convert quaternion to RPY
+        ysqr = person[obst_it].pose.orientation.y * person[obst_it].pose.orientation.y;
+        t3 = +2.0 * (person[obst_it].pose.orientation.w * person[obst_it].pose.orientation.z
+                     + person[obst_it].pose.orientation.x * person[obst_it].pose.orientation.y);
+        t4 = +1.0 - 2.0 * (ysqr + person[obst_it].pose.orientation.z * person[obst_it].pose.orientation.z);
+
+        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = std::atan2(t3, t4);
+
+        total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis = 0.3;
+        total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis = 0.2;
+
+        // hard coded value of the frame rate of 5 Hz
+        for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
+        {
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = person[obst_it].pose.pose.position.x+traj_it*0.2*person[obst_it].twist.twist.linear.x;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = person[obst_it].pose.pose.position.y+traj_it*0.2*person[obst_it].twist.twist.linear.y;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.;
+        }
+    }
+
+    obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
+
+    for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
+    {
+        obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
+    }
+
+    for (int obst_it = person.TrackedPerson.size(); obst_it < lmpcc_config_->n_obstacles_; obst_it++)
+    {
+
+        for(int i=0;i < ACADO_N; i++)
+        {
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.x = current_state_(0) - 1000;
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.y = current_state_(0) - 1000;
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.orientation.z = 0;
+        }
+    }
+}
+
 void LMPCC::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map)
 {
     local_map_ = local_map;
 
-    ROS_INFO("local map update received!");
+//    ROS_INFO("local map update received!");
 }
 
 void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update)
@@ -1057,7 +1088,7 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
         }
     }
 
-    ROS_INFO("local map update received!");
+//    ROS_INFO("local map update received!");
 }
 
 void LMPCC::publishZeroJointVelocity()

@@ -38,6 +38,7 @@ public:
 
     string sub_detections_;
     string sub_optitrack_;
+    string sub_pedestrians_;
 
     double distance_threshold_;
     int obstacle_threshold_;

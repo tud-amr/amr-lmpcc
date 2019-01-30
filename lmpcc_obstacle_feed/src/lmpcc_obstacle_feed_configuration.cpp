@@ -101,6 +101,13 @@ bool lmpcc_obstacle_feed_configuration::initialize()
         return false;
     }
 
+    // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
+    if (!nh.getParam ("subscribe/pedestrians", sub_pedestrians_) )
+    {
+        ROS_WARN(" Parameter '/subscribe/pedestrians' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
     /** Detected obstacles criteria **/
     // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
     if (!nh.getParam ("detected_obstacles/distance_threshold", distance_threshold_) )

@@ -12,7 +12,7 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_listener.h>
-
+#include <spencer_tracking_msgs/TrackedPerson.h>
 #include <lmpcc_msgs/IntTrigger.h>
 
 // eigen includes
@@ -145,6 +145,12 @@ public:
      */
     void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
 
+    /**
+     * @brief PedestrianCallBack: Get current state of moving pedestrians
+     * @param persons: Data contained in spencer_tracking_msgs/TrackedPersons
+     */
+    void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& persons);
+
     void LocalMapCallBack(const nav_msgs::OccupancyGrid local_map);
 
     void LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update);
@@ -190,6 +196,9 @@ public:
 
     // subscriber for obstacle feed
     ros::Subscriber obstacle_feed_sub_;
+
+    // subscriber for pedestrian feed
+    ros::Subscriber pedestrian_feed_sub_;
 
     // subscriber for obstacle feed
     ros::Subscriber local_map_sub_;

@@ -94,7 +94,14 @@ bool LMPCC_configuration::initialize()
     // Obstacle message subscription topic
     if (!nh.getParam ("subscribe/obstacles", ellipse_objects_feed_) )
     {
-        ROS_WARN(" Parameter 'robot_state_topic' not set on %s node " , ros::this_node::getName().c_str());
+        ROS_WARN(" Parameter 'subscribe/obstacles' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    // Pedestrians detected from SPencer Tracker message subscription topic
+    if (!nh.getParam ("subscribe/pedestrians", pedestrians_objects_feed_) )
+    {
+        ROS_WARN(" Parameter 'subscribe/pedestrians' not set on %s node " , ros::this_node::getName().c_str());
         return false;
     }
 

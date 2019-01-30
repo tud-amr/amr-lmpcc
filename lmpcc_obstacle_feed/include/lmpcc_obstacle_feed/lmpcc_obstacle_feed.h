@@ -35,7 +35,7 @@
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-
+#include <spencer_tracking_msgs/TrackedPerson.h>
 
 bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs::lmpcc_obstacle const &obst2);
 
@@ -49,7 +49,7 @@ public:
 
     bool initialize();
 
-    ros::Subscriber obstacles_sub, optitrack_sub;
+    ros::Subscriber obstacles_sub, optitrack_sub, pedestrians_sub;
 
     ros::Publisher obstacles_pub, visualize_obstacles_pub;
     ros::Publisher obst1_path_pub, obst2_path_pub;
@@ -86,6 +86,7 @@ private:
     void spinNode();
     void clearDataMember();
     void detectionsCallback(const vision_msgs::Detection3DArray& objects);
+    void pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person);
     void optitrackCallback(const nav_msgs::Path& predicted_path);
     void updateObstacles(const ros::TimerEvent& event);
     void publishObstacles(const lmpcc_msgs::lmpcc_obstacle_array& obstacles);
