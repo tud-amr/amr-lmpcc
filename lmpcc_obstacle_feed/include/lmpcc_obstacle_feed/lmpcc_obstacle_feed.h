@@ -35,7 +35,7 @@
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <spencer_tracking_msgs/TrackedPerson.h>
+#include <spencer_tracking_msgs/TrackedPersons.h>
 
 bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs::lmpcc_obstacle const &obst2);
 

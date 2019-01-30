@@ -300,86 +300,23 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
     lmpcc_msgs::lmpcc_obstacle ellipse;
     vision_msgs::Detection3D ped;
 
-    for (int object_it = 0; object_it < person.TrackedPerson.size(); object_it++)
+    for (int object_it = 0; object_it < person.tracks.size(); object_it++)
     {
 //        // SHIFTING ALL OBSTACLES IN SPACE
 //        objectArray_.objects[object_it].pose.position.y = objectArray_.objects[object_it].pose.position.y + 2;
 
         // Compute distance of obstacle to robot
-        distance = sqrt(pow(person[object_it].pose.pose.position.x,2) + pow(person[object_it].pose.pose.position.y,2));
-        ped.bbox.center.position.x = person[object_it].pose.pose.position.x;
-        ped.bbox.center.position.y = person[object_it].pose.pose.orientation.x;
-        ped.bbox.center.orientation.x = person[object_it].pose.pose.orientation.y;
-        ped.bbox.center.orientation.y = person[object_it].pose.pose.orientation.z;
-        ped.bbox.center.orientation.x = person[object_it].pose.pose.orientation.w;
+        distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x,2) + pow(person.tracks[object_it].pose.pose.position.y,2));
+        ped.bbox.center.position.x = person.tracks[object_it].pose.pose.position.x;
+        ped.bbox.center.position.y = person.tracks[object_it].pose.pose.orientation.x;
+        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.y;
+        ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.z;
+        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.w;
 
 
         // If distance is smaller than defined bound, add to obstacles
         if (distance < distance_ ){
             local_objects.detections.push_back(ped);
-            objectDistances.push_back(distance);
-        }
-    }
-
-    // For all obstacles, fit an ellipse
-    for (int local_obst_it = 0; local_obst_it < local_objects.detections.size(); local_obst_it++)
-    {
-        ellipse = FitEllipse(local_objects.detections[local_obst_it],objectDistances[local_obst_it]);
-        ellipses.lmpcc_obstacles.push_back(ellipse);
-
-    }
-
-    // Order obstacles according to distance
-    OrderObstacles(ellipses);
-
-    local_ellipses.lmpcc_obstacles.clear();
-
-    // Transform and add to local obstacles upto a defined bound
-    for (int ellipses_it = 0; ellipses_it < N_obstacles_ && ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
-    {
-        ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
-        transformPose(lmpcc_obstacle_feed_config_->robot_frame_,lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].pose);
-        QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].pose);
-        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
-    }
-
-    // Publish and visualize obstacles
-    publishObstacles(local_ellipses);
-    visualizeObstacles(local_ellipses);
-
-//    && local_obst_it < lmpcc_obstacle_feed_config_->obstacle_threshold_
-//    ROS_INFO_STREAM("Received array of " << objectArray.objects.size() << " objects");
-//    ROS_INFO_STREAM("Stored " << objectIDs.size() << " object identities");
-//    ROS_INFO_STREAM("Stored " << ellipses.lmpcc_obstacles.size() << " object identities");
-}
-
-void ObstacleFeed::pedestriansCallback(const vision_msgs::Detection3DArray& objects)
-{
-    //  ROS_INFO_STREAM("Obstacles callback!");
-
-    objectArray_ = objects;
-
-    std::vector<uint32_t> objectIDs;
-    std::vector<double> objectDistances;
-    double distance, volume;
-
-    vision_msgs::Detection3DArray local_objects;
-    lmpcc_msgs::lmpcc_obstacle_array ellipses;
-    lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
-    lmpcc_msgs::lmpcc_obstacle ellipse;
-
-    for (int object_it = 0; object_it < objectArray_.detections.size(); object_it++)
-    {
-//        // SHIFTING ALL OBSTACLES IN SPACE
-//        objectArray_.objects[object_it].pose.position.y = objectArray_.objects[object_it].pose.position.y + 2;
-
-        // Compute distance of obstacle to robot
-        distance = sqrt(pow(objectArray_.detections[object_it].bbox.center.position.x,2) + pow(objectArray_.detections[object_it].bbox.center.position.y,2));
-        volume = objectArray_.detections[object_it].bbox.size.x*objectArray_.detections[object_it].bbox.size.y*objectArray_.detections[object_it].bbox.size.z;
-
-        // If distance is smaller than defined bound, add to obstacles
-        if (distance < distance_ && volume > minV_ && volume < maxV_){
-            local_objects.detections.push_back(objectArray_.detections[object_it]);
             objectDistances.push_back(distance);
         }
     }

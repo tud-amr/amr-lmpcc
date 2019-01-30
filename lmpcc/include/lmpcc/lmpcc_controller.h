@@ -12,7 +12,7 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_listener.h>
-#include <spencer_tracking_msgs/TrackedPerson.h>
+#include <spencer_tracking_msgs/TrackedPersons.h>
 #include <lmpcc_msgs/IntTrigger.h>
 
 // eigen includes
@@ -149,7 +149,7 @@ public:
      * @brief PedestrianCallBack: Get current state of moving pedestrians
      * @param persons: Data contained in spencer_tracking_msgs/TrackedPersons
      */
-    void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& persons);
+    void PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& persons);
 
     void LocalMapCallBack(const nav_msgs::OccupancyGrid local_map);
 

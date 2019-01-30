@@ -1020,22 +1020,20 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
-    total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
-
-    ROS_INFO_STREAM("-- Received # pedestrians: " << person.TrackedPerson.size());
+    ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
     ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
     double ysqr, t3, t4;
-
-    for (int obst_it = 0; obst_it < std::min(person.TrackedPerson.size(),lmpcc_config_->n_obstacles_); obst_it++)
+    int n = std::min(int(person.tracks.size()),lmpcc_config_->n_obstacles_);
+    for (int obst_it = 0; obst_it < n; obst_it++)
     {
-        total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = person[obst_it].pose.pose.position.x;
-        total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = person[obst_it].pose.pose.position.y;
+        total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = person.tracks[obst_it].pose.pose.position.x;
+        total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = person.tracks[obst_it].pose.pose.position.y;
 
         // Convert quaternion to RPY
-        ysqr = person[obst_it].pose.orientation.y * person[obst_it].pose.orientation.y;
-        t3 = +2.0 * (person[obst_it].pose.orientation.w * person[obst_it].pose.orientation.z
-                     + person[obst_it].pose.orientation.x * person[obst_it].pose.orientation.y);
-        t4 = +1.0 - 2.0 * (ysqr + person[obst_it].pose.orientation.z * person[obst_it].pose.orientation.z);
+        ysqr = person.tracks[obst_it].pose.pose.orientation.y * person.tracks[obst_it].pose.pose.orientation.y;
+        t3 = +2.0 * (person.tracks[obst_it].pose.pose.orientation.w * person.tracks[obst_it].pose.pose.orientation.z
+                     + person.tracks[obst_it].pose.pose.orientation.x * person.tracks[obst_it].pose.pose.orientation.y);
+        t4 = +1.0 - 2.0 * (ysqr + person.tracks[obst_it].pose.pose.orientation.z * person.tracks[obst_it].pose.pose.orientation.z);
 
         total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = std::atan2(t3, t4);
 
@@ -1045,9 +1043,9 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
         // hard coded value of the frame rate of 5 Hz
         for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
         {
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = person[obst_it].pose.pose.position.x+traj_it*0.2*person[obst_it].twist.twist.linear.x;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = person[obst_it].pose.pose.position.y+traj_it*0.2*person[obst_it].twist.twist.linear.y;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = person.tracks[obst_it].pose.pose.position.x+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.x;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = person.tracks[obst_it].pose.pose.position.y+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.y;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z;
         }
     }
 
@@ -1058,7 +1056,7 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
         obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
 
-    for (int obst_it = person.TrackedPerson.size(); obst_it < lmpcc_config_->n_obstacles_; obst_it++)
+    for (int obst_it = person.tracks.size(); obst_it < lmpcc_config_->n_obstacles_; obst_it++)
     {
 
         for(int i=0;i < ACADO_N; i++)
