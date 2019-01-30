@@ -167,6 +167,8 @@ public:
                                         geometry_msgs::PoseStamped& stamped_pose
                                         );
 
+    bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
+
     /**
      * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
      * @param vector: std vectors want to tranfrom

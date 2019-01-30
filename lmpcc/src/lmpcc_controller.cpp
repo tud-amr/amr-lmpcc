@@ -1040,6 +1040,7 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
         total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis = 0.3;
         total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis = 0.2;
 
+        transformPose("odom",lmpcc_config_->planning_frame_,total_obstacles.lmpcc_obstacles[obst_it].pose);
         // hard coded value of the frame rate of 5 Hz
         for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
         {
@@ -1048,6 +1049,7 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z;
         }
     }
+
 
     obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
@@ -1066,6 +1068,44 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
             obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.orientation.z = 0;
         }
     }
+}
+
+bool LMPCC::transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose)
+{
+    bool transform = false;
+    tf::StampedTransform stamped_tf;
+
+    geometry_msgs::PoseStamped stampedPose_in, stampedPose_out;
+
+    stampedPose_in.pose = pose;
+//    stampedPose_in.header.stamp = ros::Time::now();
+    stampedPose_in.header.frame_id = from;
+
+    // make sure source and target frame exist
+    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
+    {
+        try
+        {
+            // find transforamtion between souce and target frame
+            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.02));
+            tf_listener_.transformPose(to, stampedPose_in, stampedPose_out);
+
+            transform = true;
+        }
+        catch (tf::TransformException& ex)
+        {
+            ROS_ERROR("MPCC::getTransform: %s", ex.what());
+        }
+    }
+
+    else
+    {
+        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",from.c_str(), to.c_str());
+    }
+
+    pose = stampedPose_out.pose;
+
+    return transform;
 }
 
 void LMPCC::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map)
