@@ -64,6 +64,9 @@ public:
     bool activate_visualization_;
     bool activate_feedback_message_;
 
+    /**Map parameters **/
+    double map_resolution_;
+    int clean_ped_window_size_;
     /** controller frequency in Hz **/
     double controller_frequency_;
 

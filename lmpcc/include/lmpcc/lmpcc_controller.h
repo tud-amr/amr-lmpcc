@@ -206,7 +206,7 @@ public:
     ros::Subscriber local_map_sub_;
     // subscriber for obstacle feed
     ros::Subscriber local_map_updates_sub_;
-
+    ros::Publisher local_map_pub_;
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
@@ -218,6 +218,8 @@ public:
 	nav_msgs::Path local_spline_traj1_,local_spline_traj2_,local_spline_traj3_,local_spline_traj4_,local_spline_traj5_;
 	nav_msgs::OccupancyGrid global_map_, local_map_, static_map_;
     nav_msgs::GetMap map_srv_;
+
+    bool clean_pedestrians_;
 
     lmpcc_msgs::IntTrigger obstacle_trigger;
 
