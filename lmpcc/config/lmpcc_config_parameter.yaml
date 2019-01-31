@@ -28,7 +28,7 @@ publish:
     cmd_sim:      jackal_velocity_controller/cmd_vel
 subscribe:
     robot_state:  robot_state
-    obstacles:    ellipse_objects_feed
+    obstacles:    none #ellipse_objects_feed
     pedestrians:    /spencer/perception/tracked_persons
 
 # Coordinate frame definitions

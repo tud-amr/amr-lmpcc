@@ -20,8 +20,8 @@ publish:
     obstacles: ellipse_objects_feed
     obstacles_vis: visualize_ellipses_array
 subscribe:
-    detections: detection_3d
-    optitrack: future_obj_track
+    detections: none #detection_3d
+    optitrack: none #future_obj_track
     pedestrians: /spencer/perception/tracked_persons
 
 # Detection criteria

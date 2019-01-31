@@ -116,7 +116,7 @@ bool ObstacleFeed::initialize()
         else{
             ROS_ERROR("UNDEFINED MODE");
         }
-
+        ROS_INFO_STREAM("ObstacleFeed Initialized");
         return true;
     }
     else
@@ -289,7 +289,7 @@ void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objec
 
 void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person)
 {
-    ROS_INFO_STREAM("Pedestrian callback!");
+    //ROS_INFO_STREAM("Pedestrian callback!");
 
     std::vector<uint32_t> objectIDs;
     std::vector<double> objectDistances;
@@ -307,7 +307,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
 //        // SHIFTING ALL OBSTACLES IN SPACE
 //        objectArray_.objects[object_it].pose.position.y = objectArray_.objects[object_it].pose.position.y + 2;
 
-        // Compute distance of obstacle to robot
+        //ROS_INFO_STREAM("-- Compute distance of obstacle to robot: " );
         distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x,2) + pow(person.tracks[object_it].pose.pose.position.y,2));
         ped.bbox.center.position.x = person.tracks[object_it].pose.pose.position.x;
         ped.bbox.center.position.y = person.tracks[object_it].pose.pose.position.y;
@@ -315,42 +315,69 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.y;
         ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.z;
         ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.w;
-        ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
+         //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
 
         // If distance is smaller than defined bound, add to obstacles
-        //if (distance < distance_ ){
+        if (distance < distance_ ){
             local_objects.detections.push_back(ped);
             objectDistances.push_back(distance);
-            ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
-        //}
+            //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
+        }
     }
 
-    // For all obstacles, fit an ellipse
+    //ROS_INFO_STREAM("For all obstacles, fit an ellipse");
+
     for (int local_obst_it = 0; local_obst_it < local_objects.detections.size(); local_obst_it++)
     {
+        //ROS_INFO_STREAM("FitElting lipse");
         ellipse = FitEllipse(local_objects.detections[local_obst_it],objectDistances[local_obst_it]);
-        ellipses.lmpcc_obstacles.push_back(ellipse);
 
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[traj_it].pose.position.x = ellipse.pose.position.x + dt_*traj_it*person.tracks[local_obst_it].twist.twist.linear.x;
+            ellipse.trajectory.poses[traj_it].pose.position.y = ellipse.pose.position.y + dt_*traj_it*person.tracks[local_obst_it].twist.twist.linear.y;
+
+        }
+
+        ellipses.lmpcc_obstacles.push_back(ellipse);
+        //ROS_INFO_STREAM("-- Received # 5: " << person.tracks.size());
     }
 
-    // Order obstacles according to distance
+    //ROS_INFO_STREAM("Order obstacles according to distance");
     OrderObstacles(ellipses);
 
     local_ellipses.lmpcc_obstacles.clear();
 
-    // Transform and add to local obstacles upto a defined bound
+    //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");
     for (int ellipses_it = 0; ellipses_it < N_obstacles_ && ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
     {
+
         ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
+
         transformPose(lmpcc_obstacle_feed_config_->robot_frame_,lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].pose);
+
         QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].pose);
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            //ROS_INFO_STREAM("ZRotToQuat");
+            ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
+            //ROS_INFO_STREAM("transformPose");
+            transformPose(lmpcc_obstacle_feed_config_->robot_frame_,lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
+            //ROS_INFO_STREAM("QuatToZRot");
+            QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
+        }
         local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
     }
 
-    // Publish and visualize obstacles
-    publishObstacles(local_ellipses);
-    visualizeObstacles(local_ellipses);
-
+    //ROS_INFO_STREAM("Publish and visualize obstacles");
+    if(local_ellipses.lmpcc_obstacles.size()>0){
+        publishObstacles(local_ellipses);
+        visualizeObstacles(local_ellipses);
+    }
 //    && local_obst_it < lmpcc_obstacle_feed_config_->obstacle_threshold_
 //    ROS_INFO_STREAM("Received array of " << objectArray.objects.size() << " objects");
 //    ROS_INFO_STREAM("Stored " << objectIDs.size() << " object identities");
@@ -359,6 +386,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
 
 void ObstacleFeed::publishObstacles(const lmpcc_msgs::lmpcc_obstacle_array& obstacles)
 {
+    //ROS_INFO_STREAM("publishObstacles");
     obstacles_pub.publish(obstacles);
 }
 
@@ -389,7 +417,10 @@ void ObstacleFeed::visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& ob
 
     visualize_obstacles_pub.publish(markerArray);
 
-    if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 2) {
+    if (obstacles.lmpcc_obstacles.size() == 1) {
+        obst1_path_pub.publish(obstacles.lmpcc_obstacles[0].trajectory);
+    }
+    if (obstacles.lmpcc_obstacles.size() == 2) {
         obst1_path_pub.publish(obstacles.lmpcc_obstacles[0].trajectory);
         obst2_path_pub.publish(obstacles.lmpcc_obstacles[1].trajectory);
     }
@@ -400,15 +431,16 @@ bool CompareObstacleDistance(lmpcc_msgs::lmpcc_obstacle const &obst1, lmpcc_msgs
 void ObstacleFeed::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
 {
     // Create vector of obstacles
-    std::vector<lmpcc_msgs::lmpcc_obstacle> ellipsesVector;
-    ellipsesVector = ellipses.lmpcc_obstacles;
+    if(ellipses.lmpcc_obstacles.size()>0){
+        std::vector<lmpcc_msgs::lmpcc_obstacle> ellipsesVector;
+        ellipsesVector = ellipses.lmpcc_obstacles;
 
-    // Sort vector according to distances
-    std::sort(ellipsesVector.begin(),ellipsesVector.end(), CompareObstacleDistance);
+        // Sort vector according to distances
+        std::sort(ellipsesVector.begin(),ellipsesVector.end(), CompareObstacleDistance);
 
-    // Write vector of sorted obstacles to obstacles structure
-    ellipses.lmpcc_obstacles = ellipsesVector;
-
+        // Write vector of sorted obstacles to obstacles structure
+        ellipses.lmpcc_obstacles = ellipsesVector;
+    }
 //    // print out content:
 //    std::cout << "myvector contains:";
 //    for (int it = 0; it < ellipses.lmpcc_obstacles.size(); it++)
@@ -418,8 +450,9 @@ void ObstacleFeed::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
 
 lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection3D& object, const double& distance)
 {
-
+    ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
+    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
     ellipse.major_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
     ellipse.minor_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
     ellipse.distance = distance;

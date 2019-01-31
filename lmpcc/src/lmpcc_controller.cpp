@@ -13,7 +13,7 @@ LMPCC::~LMPCC()
 
 void LMPCC::spinNode()
 {
-    ROS_INFO(" lmpcc node is running, now it's 'Spinning Node'");
+    //ROS_INFO(" lmpcc node is running, now it's 'Spinning Node'");
     ros::spin();
 }
 
@@ -221,6 +221,7 @@ bool LMPCC::initialize()
 
 bool LMPCC::initialize_visuals()
 {
+    //ROS_INFO_STREAM("initialize_visuals");
     robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
     pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
     global_plan_pub_ = nh.advertise<visualization_msgs::MarkerArray>("global_plan",1);
@@ -281,9 +282,9 @@ bool LMPCC::initialize_visuals()
 }
 
 void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
-
+    //ROS_INFO_STREAM("reconfigureCallback");
     if (lmpcc_config_->activate_debug_output_) {
-        ROS_INFO("Reconfigure callback");
+        //ROS_INFO("Reconfigure callback");
     }
 
     cost_contour_weight_factors_(0) = config.Wcontour;
@@ -315,6 +316,7 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
 
 void LMPCC::computeEgoDiscs()
 {
+    //ROS_INFO_STREAM("computeEgoDiscs");
     // Collect parameters for disc representation
     int n_discs = lmpcc_config_->n_discs_;
     double length = lmpcc_config_->ego_l_;
@@ -335,6 +337,7 @@ void LMPCC::computeEgoDiscs()
 
 void LMPCC::broadcastPathPose(){
 
+    //ROS_INFO_STREAM("broadcastPathPose");
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
 	transformStamped.header.frame_id = lmpcc_config_->planning_frame_;
@@ -354,6 +357,7 @@ void LMPCC::broadcastPathPose(){
 
 void LMPCC::broadcastTF(){
 
+    //ROS_INFO_STREAM("broadcastTF");
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
 	transformStamped.header.frame_id = lmpcc_config_->planning_frame_;
@@ -389,6 +393,7 @@ void LMPCC::broadcastTF(){
 // This function is called each 1/controller_frequency
 void LMPCC::controlLoop(const ros::TimerEvent &event)
 {
+    //ROS_INFO_STREAM("controlLoop");
     int N_iter;
     acado_timer t;
     acado_tic( &t );
@@ -397,7 +402,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
 	if(!lmpcc_config_->gazebo_simulation_)
 		broadcastTF();
-
+    //ROS_INFO_STREAM("controlLoop");
     int trajectory_length = traj.multi_dof_joint_trajectory.points.size();
     if (trajectory_length > 0) {
         acadoVariables.x[0] = current_state_(0);
@@ -606,7 +611,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
 
         if (lmpcc_config_->activate_timing_output_)
-    		ROS_INFO_STREAM("Solve time " << te_ * 1e6 << " us");
+    		//ROS_INFO_STREAM("Solve time " << te_ * 1e6 << " us");
 
     // publish zero controlled velocity
         if (!tracking_)
@@ -628,7 +633,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
 void LMPCC::moveGoalCB()
 {
-//    ROS_INFO("MOVEGOALCB");
+    //ROS_INFO("MOVEGOALCB");
     if(move_action_server_->isNewGoalAvailable())
     {
         boost::shared_ptr<const lmpcc::moveGoal> move_action_goal_ptr = move_action_server_->acceptNewGoal();
@@ -647,7 +652,7 @@ void LMPCC::moveGoalCB()
 
 void LMPCC::moveitGoalCB()
 {
-    ROS_INFO_STREAM("Got new MoveIt goal!!!");
+    //ROS_INFO_STREAM("Got new MoveIt goal!!!");
 
     if(moveit_action_server_->isNewGoalAvailable())
     {
@@ -706,6 +711,8 @@ void LMPCC::moveitGoalCB()
 void LMPCC::ComputeCollisionFreeArea()
 {
     // Initialize timer
+    //ROS_INFO_STREAM("ComputeCollisionFreeARea");
+
     acado_timer t;
     acado_tic( &t );
 
@@ -758,6 +765,7 @@ void LMPCC::ComputeCollisionFreeArea()
 
 void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, double psi_path, int N)
 {
+    //ROS_INFO_STREAM("computeConstraint");
     // Initialize linear constraint normal vectors
     std::vector<double> t1(2, 0), t2(2, 0), t3(2, 0), t4(2, 0);
 
@@ -894,10 +902,12 @@ void LMPCC::computeConstraint(int x_i, int y_i, double x_path, double y_path, do
 
 int LMPCC::getOccupancy(int x_i, int y_i)
 {
+    //ROS_INFO_STREAM("getOccupancy");
     return static_map_.data[static_map_.info.width*y_i + x_i];
 }
 
 int LMPCC::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi) {
+    //ROS_INFO_STREAM("getRotatedOccupancy");
     int x_search_rotated = (int) round(cos(psi) * search_x - sin(psi) * search_y);
     int y_search_rotated = (int) round(sin(psi) * search_x + cos(psi) * search_y);
 
@@ -932,6 +942,7 @@ void LMPCC::actionAbort()
 // read current position and velocity of robot joints
 void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
+    //ROS_INFO("LMPCC::StateCallBack");
     if (lmpcc_config_->activate_debug_output_) {
 //        ROS_INFO("LMPCC::StateCallBack");
     }
@@ -980,13 +991,14 @@ void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 
 void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
+    //ROS_INFO("LMPCC::ObstacleCallBack");
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
     total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
 
-//    ROS_INFO_STREAM("-- Received # obstacles: " << obstacles.Obstacles.size());
-//    ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
+//    //ROS_INFO_STREAM("-- Received # obstacles: " << obstacles.Obstacles.size());
+//    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
 
     if (received_obstacles.lmpcc_obstacles.size() < lmpcc_config_->n_obstacles_)
     {
@@ -1007,7 +1019,7 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
         }
     }
 
-    obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
+    //obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
     for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
     {
@@ -1017,11 +1029,12 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
 
 void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& person)
 {
+    //ROS_INFO("LMPCC::PedestrianCallBack");
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
-    ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
-    ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
+    //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
+
     double ysqr, t3, t4;
     int n = std::min(int(person.tracks.size()),lmpcc_config_->n_obstacles_);
     for (int obst_it = 0; obst_it < n; obst_it++)
@@ -1035,13 +1048,17 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
                      + person.tracks[obst_it].pose.pose.orientation.x * person.tracks[obst_it].pose.pose.orientation.y);
         t4 = +1.0 - 2.0 * (ysqr + person.tracks[obst_it].pose.pose.orientation.z * person.tracks[obst_it].pose.pose.orientation.z);
 
-        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = std::atan2(t3, t4);
-
+        //total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = std::atan2(t3, t4);
+        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.x = person.tracks[obst_it].pose.pose.orientation.x;
+        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.y = person.tracks[obst_it].pose.pose.orientation.y;
+        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = person.tracks[obst_it].pose.pose.orientation.z;
+        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.w = person.tracks[obst_it].pose.pose.orientation.w;
         total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis = 0.3;
         total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis = 0.2;
 
         transformPose("odom",lmpcc_config_->planning_frame_,total_obstacles.lmpcc_obstacles[obst_it].pose);
         // hard coded value of the frame rate of 5 Hz
+        total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
         for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
         {
            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = person.tracks[obst_it].pose.pose.position.x+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.x;
@@ -1050,28 +1067,36 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
         }
     }
 
+    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
 
-    obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
-
-    for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
+    for (int total_obst_it = 0; total_obst_it < n; total_obst_it++)
     {
         obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
-
-    for (int obst_it = person.tracks.size(); obst_it < lmpcc_config_->n_obstacles_; obst_it++)
+    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
+    for (int obst_it = n; obst_it < lmpcc_config_->n_obstacles_; obst_it++)
     {
-
+        //ROS_INFO_STREAM("3 " << std::endl);
+        //obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
+        //ROS_INFO_STREAM("1 " << std::endl);
+        obstacles_.lmpcc_obstacles[obst_it].pose.position.x = current_state_(0) - 1000;
+        obstacles_.lmpcc_obstacles[obst_it].pose.position.y = current_state_(1) - 1000;
+        //ROS_INFO_STREAM("1 " << std::endl);
         for(int i=0;i < ACADO_N; i++)
         {
             obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.x = current_state_(0) - 1000;
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.y = current_state_(0) - 1000;
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.y = current_state_(1) - 1000;
             obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.orientation.z = 0;
+            //ROS_INFO_STREAM("2s " << std::endl);
         }
+        //ROS_INFO_STREAM("4 " << std::endl);
     }
+    //ROS_INFO_STREAM("Existing pedestrian callback");
 }
 
 bool LMPCC::transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose)
 {
+    //ROS_INFO("LMPCC::transformPose");
     bool transform = false;
     tf::StampedTransform stamped_tf;
 
@@ -1110,19 +1135,44 @@ bool LMPCC::transformPose(const std::string& from, const std::string& to, geomet
 
 void LMPCC::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map)
 {
+    //ROS_INFO("LMPCC::LocalMapCallBack");
     local_map_ = local_map;
 
-//    ROS_INFO("local map update received!");
+    //ROS_INFO("local map update received!");
 }
 
 void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update)
 {
+    //ROS_INFO("LMPCC::LocalMapUpdatesCallBack");
     int index = 0;
+    geometry_msgs::Pose obs;
     for(int y = local_map_update.y; y < local_map_update.y + local_map_update.height; y++)
     {
         for(int x = local_map_update.x; x < local_map_update.x + local_map_update.width; x++)
         {
             local_map_.data[ local_map_.info.width*y + x ] = local_map_update.data[index++];
+        }
+    }
+    //ROS_INFO_STREAM("local_map_update.y: " << local_map_update.y << std::endl);
+    //ROS_INFO_STREAM("local_map_update.x: " << local_map_update.x << std::endl);
+    //ROS_INFO_STREAM("local_map_update.height: " << local_map_update.height << std::endl);
+    //ROS_INFO_STREAM("local_map_update.height: " << local_map_update.height << std::endl);
+    //ROS_INFO_STREAM("local_map_update.header.frame_id: " << local_map_update.header.frame_id << std::endl);
+
+    for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
+    {
+        obs = obstacles_.lmpcc_obstacles[total_obst_it].pose;
+
+        //transformPose(lmpcc_config_->planning_frame_,lmpcc_config_->robot_base_link_,obs);
+
+        if((obs.position.x/0.05 >local_map_update.x) && (obs.position.x/0.05 <local_map_update.x+local_map_update.height)
+            && (obs.position.y/0.05 >local_map_update.y) && (obs.position.y/0.05 <local_map_update.y+local_map_update.height))
+        {
+            int x = obs.position.x/0.05;
+            int y = obs.position.y/0.05;
+            //ROS_INFO_STREAM("x: " << x << std::endl);
+            //ROS_INFO_STREAM("y: " << y << std::endl);
+            local_map_.data[ local_map_.info.width*y + x ] = 0;
         }
     }
 
@@ -1131,9 +1181,10 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
 
 void LMPCC::publishZeroJointVelocity()
 {
+    //ROS_INFO("LMPCC::publishZeroJointVelocity");
     if (lmpcc_config_->activate_debug_output_)
     {
-        ROS_INFO("Publishing ZERO joint velocity!!");
+        //ROS_INFO("Publishing ZERO joint velocity!!");
     }
 
     geometry_msgs::Twist pub_msg;
@@ -1147,6 +1198,7 @@ void LMPCC::publishZeroJointVelocity()
 
 void LMPCC::publishGlobalPlan(void)
 {
+    //ROS_INFO("LMPCC::publishGlobalPlan");
     // Create MarkerArray for global path point visualization
     visualization_msgs::MarkerArray plan;
 
@@ -1175,6 +1227,7 @@ void LMPCC::publishGlobalPlan(void)
 
 void LMPCC::publishLocalRefPath(void)
 {
+    //ROS_INFO("LMPCC::publishLocalRefPath");
     local_spline_traj1_.header.stamp = ros::Time::now();
     local_spline_traj2_.header.stamp = ros::Time::now();
     local_spline_traj3_.header.stamp = ros::Time::now();
@@ -1233,6 +1286,7 @@ void LMPCC::publishLocalRefPath(void)
 
 void LMPCC::publishPredictedTrajectory(void)
 {
+    //ROS_INFO("LMPCC::publishPredictedTrajectory");
     for (int i = 0; i < ACADO_N; i++)
     {
         pred_traj_.poses[i].pose.position.x = acadoVariables.x[i * ACADO_NX + 0]; //x
@@ -1245,6 +1299,7 @@ void LMPCC::publishPredictedTrajectory(void)
 
 void LMPCC::publishPredictedOutput(void)
 {
+    //ROS_INFO("LMPCC::publishPredictedOutput");
 	for (int i = 0; i < ACADO_N; i++)
 	{
 		pred_cmd_.poses[i].pose.position.x = acadoVariables.u[i + 0]; //x
@@ -1256,6 +1311,7 @@ void LMPCC::publishPredictedOutput(void)
 
 void LMPCC::publishPredictedCollisionSpace(void)
 {
+    //ROS_INFO("LMPCC::publishPredictedCollisionSpace");
 	visualization_msgs::MarkerArray collision_space;
 
 	for (int i = 0; i < ACADO_N; i++)
@@ -1316,6 +1372,7 @@ void LMPCC::ZRotToQuat(geometry_msgs::Pose& pose)
 
 void LMPCC::publishPosConstraint(){
 
+    //ROS_INFO("LMPCC::publishPosConstraint");
     visualization_msgs::MarkerArray collision_free;
     double x_center, y_center;
 
