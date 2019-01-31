@@ -300,7 +300,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
     lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
     lmpcc_msgs::lmpcc_obstacle ellipse;
     vision_msgs::Detection3D ped;
-
+    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
 
     for (int object_it = 0; object_it < person.tracks.size(); object_it++)
     {
@@ -353,7 +353,8 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
     local_ellipses.lmpcc_obstacles.clear();
 
     //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");
-    for (int ellipses_it = 0; ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
+    int n = std::min(int(ellipses.lmpcc_obstacles.size()),N_obstacles_);
+    for (int ellipses_it = 0; ellipses_it < n; ellipses_it++)
     {
 
         ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
@@ -373,18 +374,17 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
     }
 
-    for (int ellipses_it = ellipses.lmpcc_obstacles.size(); ellipses_it < N_obstacles_ ; ellipses_it++)
+    for (int ellipses_it = n; ellipses_it < N_obstacles_ ; ellipses_it++)
     {
-        ellipses.lmpcc_obstacles[ellipses_it].pose.position.x = 1000;
-        ellipses.lmpcc_obstacles[ellipses_it].pose.position.y = 1000;
-
+        ellipse.pose.position.x = 1000;
+        ellipse.pose.position.y = 1000;
         for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
         {
-            ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose.position.x = 1000;
-            ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose.position.y = 1000;
+            ellipse.trajectory.poses[traj_it].pose.position.x = 1000;
+            ellipse.trajectory.poses[traj_it].pose.position.y = 1000;
         }
 
-        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
+        local_ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
     //ROS_INFO_STREAM("Publish and visualize obstacles");

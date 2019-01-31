@@ -1063,7 +1063,12 @@ void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& pers
         {
            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = person.tracks[obst_it].pose.pose.position.x+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.x;
            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = person.tracks[obst_it].pose.pose.position.y+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.y;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.x = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.x;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.y = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.y;
            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z;
+           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.w = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.w;
+
+           transformPose("odom",lmpcc_config_->planning_frame_,total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose);
         }
     }
 
@@ -1153,11 +1158,11 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
             local_map_.data[ local_map_.info.width*y + x ] = local_map_update.data[index++];
         }
     }
-    //ROS_INFO_STREAM("local_map_update.y: " << local_map_update.y << std::endl);
-    //ROS_INFO_STREAM("local_map_update.x: " << local_map_update.x << std::endl);
-    //ROS_INFO_STREAM("local_map_update.height: " << local_map_update.height << std::endl);
-    //ROS_INFO_STREAM("local_map_update.height: " << local_map_update.height << std::endl);
-    //ROS_INFO_STREAM("local_map_update.header.frame_id: " << local_map_update.header.frame_id << std::endl);
+    ROS_INFO_STREAM("local_map_update.y: " << local_map_update.y << std::endl);
+    ROS_INFO_STREAM("local_map_update.x: " << local_map_update.x << std::endl);
+    ROS_INFO_STREAM("local_map_update.height: " << local_map_update.height << std::endl);
+    ROS_INFO_STREAM("local_map_update.height: " << local_map_update.height << std::endl);
+    ROS_INFO_STREAM("local_map_update.header.frame_id: " << local_map_update.header.frame_id << std::endl);
 
     for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
     {
@@ -1170,8 +1175,8 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
         {
             int x = obs.position.x/0.05;
             int y = obs.position.y/0.05;
-            //ROS_INFO_STREAM("x: " << x << std::endl);
-            //ROS_INFO_STREAM("y: " << y << std::endl);
+            ROS_INFO_STREAM("x: " << x << std::endl);
+            ROS_INFO_STREAM("y: " << y << std::endl);
             local_map_.data[ local_map_.info.width*y + x ] = 0;
         }
     }
