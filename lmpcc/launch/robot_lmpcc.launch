@@ -29,15 +29,6 @@
     <param name="collision_avoidance/local_map" value="true" type="bool" />
     <param name="simulation_mode" value="false" type="bool" />
 
-    <!-- Publishes the voxel grid to rviz for display -->
-    <node pkg="costmap_2d" type="costmap_2d_markers" name="voxel_visualizer">
-      <remap from="voxel_grid" to="costmap/voxel_grid"/>
-    </node>
-
-    <!-- Run the costmap node -->
-    <node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" >
-      <rosparam file="$(find lmpcc)/config/local_map_params.yaml" command="load" ns="costmap" />
-    </node>
 </launch>  
 
 
