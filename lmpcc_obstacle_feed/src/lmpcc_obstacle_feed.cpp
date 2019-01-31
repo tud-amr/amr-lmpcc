@@ -353,7 +353,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
     local_ellipses.lmpcc_obstacles.clear();
 
     //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");
-    for (int ellipses_it = 0; ellipses_it < N_obstacles_ && ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
+    for (int ellipses_it = 0; ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
     {
 
         ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
@@ -370,6 +370,20 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
             //ROS_INFO_STREAM("QuatToZRot");
             QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
         }
+        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
+    }
+
+    for (int ellipses_it = ellipses.lmpcc_obstacles.size(); ellipses_it < N_obstacles_ ; ellipses_it++)
+    {
+        ellipses.lmpcc_obstacles[ellipses_it].pose.position.x = 1000;
+        ellipses.lmpcc_obstacles[ellipses_it].pose.position.y = 1000;
+
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose.position.x = 1000;
+            ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose.position.y = 1000;
+        }
+
         local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
     }
 
@@ -450,7 +464,7 @@ void ObstacleFeed::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
 
 lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection3D& object, const double& distance)
 {
-    ROS_INFO_STREAM("FitEllipse");
+    //ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
     ellipse.major_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
