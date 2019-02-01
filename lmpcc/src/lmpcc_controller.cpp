@@ -74,7 +74,6 @@ bool LMPCC::initialize()
         tracking_ = true;
         move_action_result_.reach = false;
         goal_reached_ = false;              // Flag for reaching the goal
-        last_poly_ = false;                 // Flag for last segment
         segment_counter = 0;                          // Initialize reference path segment counter
 
         // resize position vectors
@@ -200,6 +199,7 @@ bool LMPCC::initialize()
         collision_free_ymax.resize(ACADO_N);
 
         clean_pedestrians_ = false;
+        plan_ = false;
 
 		// Initialize global reference path
         referencePath.SetGlobalPath(lmpcc_config_->ref_x_, lmpcc_config_->ref_y_, lmpcc_config_->ref_theta_);
@@ -313,7 +313,47 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
     //Search window parameters
     window_size_ = config.window_size;
     n_search_points_ = config.n_search_points;
+    plan_ = config.plan;
+    if(plan_)
+    {
+        /** Initialize constant Online Data Variables **/
+        int N_iter;
+        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+            acadoVariables.od[(ACADO_NOD * N_iter) + 60] = r_discs_;                                // radius of car discs
+            acadoVariables.od[(ACADO_NOD * N_iter) + 61] = 0; //x_discs_[1];                        // position of the car discs
+        }
 
+        /** Request static environment map **/
+        if (map_service_.call(map_srv_))
+        {
+            ROS_ERROR("Service GetMap succeeded.");
+            global_map_ = map_srv_.response.map;
+        }
+        else
+        {
+            ROS_ERROR("Service GetMap failed.");
+        }
+
+        /** Set task flags and counters **/
+        segment_counter = 0;
+
+        goal_reached_ = false;
+
+        /** Initialize local reference path **/
+        referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
+
+        if (lmpcc_config_->activate_debug_output_)
+            referencePath.PrintLocalPath(ss,xx,yy);     // Print local reference path
+        if (lmpcc_config_->activate_visualization_)
+        {
+            publishLocalRefPath();                      // Publish local reference path for visualization
+            publishGlobalPlan();                        // Publish global reference path for visualization
+        }
+
+        /** Compute collision free area wrt static environment **/
+        ComputeCollisionFreeArea();
+    }
+    config.plan = false;
     if (use_local_map_ && lmpcc_config_->simulation_mode_){
         ROS_ERROR("Local map is only possible with real sensor data!");
     }
@@ -407,9 +447,8 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
 	if(!lmpcc_config_->gazebo_simulation_)
 		broadcastTF();
-    //ROS_INFO_STREAM("controlLoop");
-    int trajectory_length = traj.multi_dof_joint_trajectory.points.size();
-    if (trajectory_length > 0) {
+
+    if (plan_ ) {
         acadoVariables.x[0] = current_state_(0);
         acadoVariables.x[1] = current_state_(1);
         acadoVariables.x[2] = current_state_(2);
@@ -432,7 +471,6 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                 {
                     segment_counter = 0;
                     goal_reached_ = false;
-                    last_poly_ = false;
 
                     /** Re-initialize local reference path **/
                     referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
@@ -695,7 +733,6 @@ void LMPCC::moveitGoalCB()
         /** Set task flags and counters **/
         segment_counter = 0;
 		goal_reached_ = false;
-		last_poly_ = false;
 
 		/** Initialize local reference path **/
         referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
