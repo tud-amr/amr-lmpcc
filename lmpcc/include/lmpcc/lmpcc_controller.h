@@ -220,7 +220,9 @@ public:
     nav_msgs::GetMap map_srv_;
 
     bool clean_pedestrians_;
-
+    int clean_offset_x_;
+    int clean_offset_y_;
+    int pedestrian_occ_level_;
     lmpcc_msgs::IntTrigger obstacle_trigger;
 
 	int segment_counter;

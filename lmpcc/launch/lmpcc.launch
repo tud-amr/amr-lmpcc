@@ -19,8 +19,8 @@
     <rosparam command="load" file="$(find lmpcc)/config/lmpcc_config_parameter.yaml"/>
 
     <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
-    <param name="collision_avoidance/local_map" value="false" type="bool" />
-    <param name="simulation_mode" value="true" type="bool" />
+    <param name="collision_avoidance/local_map" value="true" type="bool" />
+    <param name="simulation_mode" value="false" type="bool" />
 
     <!-- Publishes the voxel grid to rviz for display -->
         <node pkg="costmap_2d" type="costmap_2d_markers" name="voxel_visualizer">
@@ -33,5 +33,5 @@
         </node>
 
     <!-- configured rviz -->
-    <!--<node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" />-->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" />
 </launch>  

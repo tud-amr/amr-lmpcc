@@ -296,6 +296,9 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
     cost_control_weight_factors_(1) = config.Kw;
 
     clean_pedestrians_ = config.clean_pedestrians;
+    clean_offset_x_ = config.clean_offset_x;
+    clean_offset_y_ = config.clean_offset_y;
+    pedestrian_occ_level_ = config.pedestrian_occ_level;
 
     slack_weight_= config.Ws;
     repulsive_weight_ = config.WR;
@@ -354,6 +357,7 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
         ComputeCollisionFreeArea();
     }
     config.plan = false;
+    ROS_INFO_STREAM("use_local_map_: " << use_local_map_ << "  lmpcc_config_->simulation_mode_: " << lmpcc_config_->simulation_mode_);
     if (use_local_map_ && lmpcc_config_->simulation_mode_){
         ROS_ERROR("Local map is only possible with real sensor data!");
     }
@@ -402,7 +406,7 @@ void LMPCC::broadcastPathPose(){
 
 void LMPCC::broadcastTF(){
 
-    //ROS_INFO_STREAM("broadcastTF");
+    ROS_INFO_STREAM("broadcastTF");
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
 	transformStamped.header.frame_id = lmpcc_config_->planning_frame_;
@@ -445,7 +449,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
     acado_initializeSolver( );
 
-	if(!lmpcc_config_->gazebo_simulation_)
+	if(lmpcc_config_->gazebo_simulation_)
 		broadcastTF();
 
     if (plan_ ) {
@@ -464,7 +468,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
 		    if (segment_counter + lmpcc_config_->n_local_ > referencePath.GlobalPathLenght()*lmpcc_config_->n_poly_per_clothoid_){
 		        goal_reached_ = true;
-                ROS_ERROR_STREAM("GOAL REACHED");
+                //ROS_ERROR_STREAM("GOAL REACHED");
 
 //                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
                 if (loop_mode_)
@@ -476,13 +480,13 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                     referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
 
                     acadoVariables.x[3] = referencePath.GetS0();
-                    ROS_ERROR_STREAM("LOOP STARTED");
+                    //ROS_ERROR_STREAM("LOOP STARTED");
                 }
             } else{
 			    segment_counter++;
                 referencePath.UpdateLocalRefPath(segment_counter, ss, xx, yy, vv);
                 acadoVariables.x[3] = referencePath.GetS0();
-                ROS_ERROR_STREAM("SWITCH SPLINE, segment_counter =  " << segment_counter);
+                //ROS_ERROR_STREAM("SWITCH SPLINE, segment_counter =  " << segment_counter);
 
 //                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
 		    }
@@ -1033,7 +1037,7 @@ void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 
 void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
-    //ROS_INFO("LMPCC::ObstacleCallBack");
+    ROS_INFO("LMPCC::ObstacleCallBack");
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
@@ -1211,29 +1215,35 @@ void LMPCC::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_ma
         for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
         {
             //ROS_INFO_STREAM("obstacle id: " << total_obst_it << std::endl);
-            obs.position.x = -current_state_(0) + obstacles_.lmpcc_obstacles[total_obst_it].pose.position.x +local_map_update.width*lmpcc_config_->map_resolution_;
-            obs.position.y = -current_state_(1) + obstacles_.lmpcc_obstacles[total_obst_it].pose.position.y +local_map_update.height*lmpcc_config_->map_resolution_;
+            obs.position.x = -current_state_(0) + obstacles_.lmpcc_obstacles[total_obst_it].pose.position.x +local_map_update.width*lmpcc_config_->map_resolution_/2;
+            obs.position.y = -current_state_(1) + obstacles_.lmpcc_obstacles[total_obst_it].pose.position.y +local_map_update.height*lmpcc_config_->map_resolution_/2;
 
             //transformPose(lmpcc_config_->planning_frame_,lmpcc_config_->robot_base_link_,obs);
             int pos_x = obs.position.x/lmpcc_config_->map_resolution_;
             int pos_y = obs.position.y/lmpcc_config_->map_resolution_;
-            //ROS_INFO_STREAM("x: " << pos_x << std::endl);
-            //ROS_INFO_STREAM("y: " << pos_y << std::endl);
-            if((pos_x >lmpcc_config_->clean_ped_window_size_) && (pos_x+lmpcc_config_->clean_ped_window_size_ <local_map_update.height)
-                && (obs.position.y/lmpcc_config_->map_resolution_ >lmpcc_config_->clean_ped_window_size_) && (obs.position.y/lmpcc_config_->map_resolution_+lmpcc_config_->clean_ped_window_size_ <local_map_update.height))
-            {
 
-                for(int y = pos_y-lmpcc_config_->clean_ped_window_size_; y < pos_y+lmpcc_config_->clean_ped_window_size_; y++)
+            //ROS_INFO_STREAM("Obstacle_pose_x: " << obstacles_.lmpcc_obstacles[total_obst_it].pose.position.x << std::endl);
+            //ROS_INFO_STREAM("Obstacle_pose_y: " << obstacles_.lmpcc_obstacles[total_obst_it].pose.position.x << std::endl);
+            //ROS_INFO_STREAM("Robot_pose_x: " << current_state_(0) << std::endl);
+            //ROS_INFO_STREAM("Robot_pose_y: " << current_state_(1)<< std::endl);
+            //ROS_INFO_STREAM("Obstacle_pose_map_x: " << obs.position.x << std::endl);
+            //ROS_INFO_STREAM("Obstacle_pose_map_y: " << obs.position.y<< std::endl);
+
+            //ROS_INFO_STREAM("x: " << pos_x << std::endl);
+            int y_ini = std::min(std::max(0,pos_y-lmpcc_config_->clean_ped_window_size_+clean_offset_y_),int(local_map_update.height));
+            int y_end = std::max(std::min(int(local_map_update.height),pos_y+lmpcc_config_->clean_ped_window_size_+clean_offset_y_),0);
+            int x_ini = std::min(std::max(0,pos_x-lmpcc_config_->clean_ped_window_size_+clean_offset_x_),int(local_map_update.width));
+            int x_end = std::max(std::min(int(local_map_update.width),pos_x+lmpcc_config_->clean_ped_window_size_+clean_offset_x_),0);
+            for(int y = y_ini; y < y_end; y++)
+            {
+                for(int x = x_ini; x < x_end; x++)
                 {
-                    for(int x = pos_x-lmpcc_config_->clean_ped_window_size_; x < pos_x+lmpcc_config_->clean_ped_window_size_; x++)
-                    {
-                        local_map_.data[ local_map_.info.width*y + x ] =0;
-                    }
+                    local_map_.data[ local_map_.info.width*y + x ] =pedestrian_occ_level_;
                 }
             }
         }
     }
-    //local_map_pub_.publish(local_map_);
+    local_map_pub_.publish(local_map_);
 //    ROS_INFO("local map update received!");
 }
 
@@ -1247,7 +1257,7 @@ void LMPCC::publishZeroJointVelocity()
 
     geometry_msgs::Twist pub_msg;
 
-	if(!lmpcc_config_->gazebo_simulation_)
+	if(lmpcc_config_->gazebo_simulation_)
 		broadcastTF();
 
     controlled_velocity_ = pub_msg;

@@ -19,8 +19,8 @@ bool LMPCC_configuration::initialize()
     ros::NodeHandle nh;
 
     /** Simulation mode **/
-    nh.param("simulation_mode", simulation_mode_, bool(true));
-    nh.param("gaebo_simulation", gazebo_simulation_, bool(true));
+    nh.param("simulation_mode", simulation_mode_, bool(false));
+    nh.param("gaebo_simulation", gazebo_simulation_, bool(false));
 
     /** Debug modes **/
     nh.param("activate_output", activate_output_, bool(true));
