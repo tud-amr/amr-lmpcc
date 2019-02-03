@@ -414,7 +414,7 @@ void ObstacleFeed::visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& ob
     for (int obst_it = 0; obst_it < obstacles.lmpcc_obstacles.size(); obst_it++) {
         marker.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;           // Add frame of obstacle
         marker.header.stamp = ros::Time::now();                 // Add timestamp
-        marker.id = obst_it;                                    // Obstacle ID
+        marker.id = obst_it*100;                                    // Obstacle ID
         marker.type = visualization_msgs::Marker::CYLINDER;
         marker.pose = obstacles.lmpcc_obstacles[obst_it].pose;
         ZRotToQuat(marker.pose);                                // Get Quaternion rotation
@@ -425,8 +425,12 @@ void ObstacleFeed::visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& ob
         marker.color.r = 0.0;
         marker.color.g = 1.0;
         marker.color.b = 0.0;
-
         markerArray.markers.push_back(marker);
+        for (int traj_it = 0; traj_it < obstacles.lmpcc_obstacles[obst_it].trajectory.poses.size(); traj_it++) {
+            marker.id = obst_it * 100 + traj_it;                                    // Obstacle ID
+            marker.pose = obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose;
+            markerArray.markers.push_back(marker);
+        }
     }
 
     visualize_obstacles_pub.publish(markerArray);
