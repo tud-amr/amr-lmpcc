@@ -144,6 +144,24 @@ bool lmpcc_obstacle_feed_configuration::initialize()
         return false;
     }
 
+    if (!nh.getParam ("detected_obstacles/lambda", lambda_) )
+    {
+        ROS_WARN(" Parameter '/detected_obstacles/lambda' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    if (!nh_config.getParam ("detected_obstacles/minor_semiaxis", minor_semiaxis_) )
+    {
+        ROS_WARN(" Parameter '/detected_obstacles/minor_semiaxis not set on %s node" , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    if (!nh_config.getParam ("detected_obstacles/major_semiaxis", major_semiaxis_) )
+    {
+        ROS_WARN(" Parameter '/detected_obstacles/major_semiaxis not set on %s node" , ros::this_node::getName().c_str());
+        return false;
+    }
+
     /** Predefined obstacle parameters **/
     if (!nh_config.getParam ("predefined_obstacles/pose_x", obst_pose_x_) )
     {

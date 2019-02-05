@@ -45,6 +45,7 @@ public:
     double min_obstacle_volume_;
     double max_obstacle_volume_;
     double obstacle_size_;
+    double lambda_, major_semiaxis_,minor_semiaxis_;
 
     std::vector<double> obst_pose_x_;
     std::vector<double> obst_pose_y_;
