@@ -70,7 +70,7 @@ private:
     ros::NodeHandle nh_;
 
     tf::TransformListener tf_listener_;
-
+    nav_msgs::Path obst1_,obst2_;
     bool activate_debug_output_;
 
     boost::shared_ptr<lmpcc_obstacle_feed_configuration> lmpcc_obstacle_feed_config_;
@@ -97,6 +97,7 @@ private:
     bool UpdateCallbackInt(lmpcc_msgs::IntTrigger::Request& request, lmpcc_msgs::IntTrigger::Response& response);
 
     lmpcc_msgs::lmpcc_obstacle FitEllipse(const vision_msgs::Detection3D& object, const double& distance);
+    lmpcc_msgs::lmpcc_obstacle FitEllipse(const geometry_msgs::Pose& object, const double& distance);
     void QuatToZRot(geometry_msgs::Pose& pose);
     void ZRotToQuat(geometry_msgs::Pose& pose);
     bool getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& transform);

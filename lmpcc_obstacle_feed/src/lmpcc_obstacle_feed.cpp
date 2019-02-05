@@ -106,6 +106,9 @@ bool ObstacleFeed::initialize()
             int update_rate = lmpcc_obstacle_feed_config_->update_rate_;
 
             optitrack_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_optitrack_, 1, &ObstacleFeed::optitrackCallback, this);
+
+            obst2_.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+            obst1_.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
         }
         else if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 0)
         {
@@ -204,29 +207,90 @@ void ObstacleFeed::updateObstacles(const ros::TimerEvent& event)
 
 void ObstacleFeed::optitrackCallback(const nav_msgs::Path& predicted_path)
 {
+    //ROS_INFO_STREAM("OPTITRACK");
+    lmpcc_msgs::lmpcc_obstacle ellipse;
+    lmpcc_msgs::lmpcc_obstacle_array ellipses;
+    lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
+    //ROS_INFO_STREAM("Path poses: " << predicted_path.poses.size() << endl);
+    if (predicted_path.header.frame_id == "1"){
+        ellipse = FitEllipse(predicted_path.poses[0].pose,1);
+        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_; path_it++)
+        {
+            obst1_ = predicted_path;
 
-//    if (predicted_path.header.frame_id == "1"){
-//
-//        for (int path_it = 0; path_it < ACADO_N ; path_it++)
-//        {
-//            obst1_x[path_it] = predicted_path.poses[path_it].pose.position.x + 1.55;
-//            obst1_y[path_it] = predicted_path.poses[path_it].pose.position.y + 2.75;
-//        }
-//    }
-//    else if  (predicted_path.header.frame_id == "2"){
-//
-//        for (int path_it = 0; path_it < ACADO_N ; path_it++)
-//        {
-//            obst2_x[path_it] = predicted_path.poses[path_it].pose.position.x + 1.55;
-//            obst2_y[path_it] = predicted_path.poses[path_it].pose.position.y + 2.75;
-//        }
-//
-//    }else if  (predicted_path.header.frame_id == "3"){
-//
-//    }
-//    else {
-//        ROS_INFO_STREAM("Obstacle id not recognized");
-//    }
+            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[path_it].pose.position.x = predicted_path.poses[path_it].pose.position.x;
+            ellipse.trajectory.poses[path_it].pose.position.y = predicted_path.poses[path_it].pose.position.y;
+            //ROS_INFO_STREAM("OPTITRACK");
+        }
+        ellipses.lmpcc_obstacles.push_back(ellipse);
+        ellipse = FitEllipse(obst2_.poses[0].pose,1);
+        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_ ; path_it++)
+        {
+            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[path_it].pose.position.x = obst2_.poses[path_it].pose.position.x;
+            ellipse.trajectory.poses[path_it].pose.position.y = obst2_.poses[path_it].pose.position.y;
+        }
+    }
+
+    else if  (predicted_path.header.frame_id == "2"){
+        ellipse = FitEllipse(predicted_path.poses[0].pose,1);
+        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_ ; path_it++)
+        {
+            obst2_ = predicted_path;
+            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[path_it].pose.position.x = predicted_path.poses[path_it].pose.position.x;
+            ellipse.trajectory.poses[path_it].pose.position.y = predicted_path.poses[path_it].pose.position.y;
+        }
+        ellipses.lmpcc_obstacles.push_back(ellipse);
+        ellipse = FitEllipse(obst1_.poses[0].pose,1);
+        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_ ; path_it++)
+        {
+            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[path_it].pose.position.x = obst1_.poses[path_it].pose.position.x;
+            ellipse.trajectory.poses[path_it].pose.position.y = obst1_.poses[path_it].pose.position.y;
+        }
+    }
+
+    //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");
+
+    for (int ellipses_it = 0; ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
+    {
+
+        ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
+
+        transformPose("map_mocap",lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].pose);
+
+        QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].pose);
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            //ROS_INFO_STREAM("ZRotToQuat");
+            ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
+            //ROS_INFO_STREAM("transformPose");
+            transformPose("map_mocap",lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
+            //ROS_INFO_STREAM("QuatToZRot");
+            QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
+        }
+        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
+    }
+
+    //ROS_INFO_STREAM("Publish and visualize obstacles");
+    if(local_ellipses.lmpcc_obstacles.size()>0){
+        publishObstacles(local_ellipses);
+        visualizeObstacles(local_ellipses);
+    }
 }
 
 void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objects)
@@ -472,10 +536,22 @@ lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection
     //ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-    ellipse.major_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->major_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->minor_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
     ellipse.distance = distance;
     ellipse.pose = object.bbox.center;
+    return ellipse;
+}
+
+lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const geometry_msgs::Pose& object, const double& distance)
+{
+    ROS_INFO_STREAM("FitEllipse");
+    lmpcc_msgs::lmpcc_obstacle ellipse;
+    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->major_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->minor_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.distance = distance;
+    ellipse.pose = object;
     return ellipse;
 }
 

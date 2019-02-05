@@ -629,6 +629,19 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
             acado_feedbackStep();
 
+            if(j >5) {
+                //factor = 1.0/(1.0+std::exp((j-8.0)));
+                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+                    //acadoVariables.u[(ACADO_NU * N_iter) + 0] = -6;
+                    //acadoVariables.u[(ACADO_NU * N_iter) + 1] = 0;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 49] = vv[0] * reference_velocity_ - N_iter * 0.2 * 0.2;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 50] = vv[1] * reference_velocity_ - N_iter * 0.2 * 0.2;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 51] = vv[2] * reference_velocity_ - N_iter * 0.2 * 0.2;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 52] = vv[3] * reference_velocity_ - N_iter * 0.2 * 0.2;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 53] = vv[4] * reference_velocity_ - N_iter * 0.2 * 0.2;
+                    //acadoVariables.od[(ACADO_NOD * N_iter) + 39] = velocity_weight_/(j-5);                     //repulsive weight
+                }
+            }
 //            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
 
             j++;    //        acado_printDifferentialVariables();
