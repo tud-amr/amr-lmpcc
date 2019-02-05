@@ -30,6 +30,7 @@ bool ObstacleFeed::initialize()
         N_obstacles_ = lmpcc_obstacle_feed_config_->obstacle_threshold_;
         distance_ = lmpcc_obstacle_feed_config_->distance_threshold_;
         obstacle_size_ = lmpcc_obstacle_feed_config_->obstacle_size_;
+        lambda_ = lmpcc_obstacle_feed_config_->lambda_;
 
         dt_ = lmpcc_obstacle_feed_config_->prediction_horizon_/lmpcc_obstacle_feed_config_->discretization_steps_;
 
@@ -471,8 +472,8 @@ lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection
     //ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-    ellipse.major_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.major_semiaxis = obstacle_size_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = obstacle_size_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
     ellipse.distance = distance;
     ellipse.pose = object.bbox.center;
     return ellipse;

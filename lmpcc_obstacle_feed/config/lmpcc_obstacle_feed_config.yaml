@@ -31,6 +31,7 @@ detected_obstacles:
     min_obstacle_volume: 0.03
     max_obstacle_volume: 1.0
     obstacle_size: 0.3
+    lambda: 0
 
 # Create predefined obstacles
 predefined_obstacles:

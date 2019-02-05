@@ -78,6 +78,7 @@ private:
     vision_msgs::Detection3DArray objectArray_;
 
     double maxV_, minV_, distance_, obstacle_threshold_, obstacle_size_;
+    double lambda_;
     double dt_;
     int N_obstacles_;
 
