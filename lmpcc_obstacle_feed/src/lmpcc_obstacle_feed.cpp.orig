@@ -472,8 +472,13 @@ lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection
     //ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-    ellipse.major_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+<<<<<<< HEAD
+    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->major_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->minor_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+=======
+    ellipse.major_semiaxis = obstacle_size_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis = obstacle_size_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+>>>>>>> f005a0396435492304f07e25e37904a8caad7eef
     ellipse.distance = distance;
     ellipse.pose = object.bbox.center;
     return ellipse;

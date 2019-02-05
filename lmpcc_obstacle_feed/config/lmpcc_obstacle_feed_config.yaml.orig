@@ -32,8 +32,11 @@ detected_obstacles:
     max_obstacle_volume: 1.0
     obstacle_size: 0.3
     lambda: 0
+<<<<<<< HEAD
     major_semiaxis: 0.4
     minor_semiaxis: 0.2
+=======
+>>>>>>> f005a0396435492304f07e25e37904a8caad7eef
 
 # Create predefined obstacles
 predefined_obstacles:
