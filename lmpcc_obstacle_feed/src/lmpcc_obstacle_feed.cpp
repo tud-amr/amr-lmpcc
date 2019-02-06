@@ -545,7 +545,7 @@ lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection
 
 lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const geometry_msgs::Pose& object, const double& distance)
 {
-    ROS_INFO_STREAM("FitEllipse");
+    //ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
     ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->major_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
