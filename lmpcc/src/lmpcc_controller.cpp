@@ -1050,7 +1050,7 @@ void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 
 void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
-    ROS_INFO("LMPCC::ObstacleCallBack");
+    //ROS_INFO("LMPCC::ObstacleCallBack");
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
@@ -1068,7 +1068,7 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
             total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = 0;
             total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis = 0.001;
             total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis = 0.001;
-
+            total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
             for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
             {
                 total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = current_state_(0) - 100;
@@ -1077,13 +1077,14 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
             }
         }
     }
-
+    //ROS_INFO("LMPCC::ObstacleCallBack");
     //obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
     for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
     {
         obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
+    ROS_INFO("LMPCC::ObstacleCallBack");
 }
 
 void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& person)
