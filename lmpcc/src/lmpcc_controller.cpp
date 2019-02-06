@@ -639,6 +639,8 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                     acadoVariables.od[(ACADO_NOD * N_iter) + 51] = vv[2] * reference_velocity_ - N_iter * 0.2 * 0.2;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 52] = vv[3] * reference_velocity_ - N_iter * 0.2 * 0.2;
                     acadoVariables.od[(ACADO_NOD * N_iter) + 53] = vv[4] * reference_velocity_ - N_iter * 0.2 * 0.2;
+                    //acadoVariables.od[(ACADO_NOD * N_iter) + 40] = cost_contour_weight_factors_(0)/(j-4);
+                    //acadoVariables.od[(ACADO_NOD * N_iter) + 43] = cost_control_weight_factors_(1)/(j-4);
                     //acadoVariables.od[(ACADO_NOD * N_iter) + 39] = velocity_weight_/(j-5);                     //repulsive weight
                 }
             }
@@ -1084,7 +1086,7 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
     {
         obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
-    ROS_INFO("LMPCC::ObstacleCallBack");
+    //ROS_INFO("LMPCC::ObstacleCallBack");
 }
 
 void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& person)
