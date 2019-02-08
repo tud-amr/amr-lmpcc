@@ -57,8 +57,8 @@ bool ObstacleFeed::initialize()
             int update_rate = lmpcc_obstacle_feed_config_->update_rate_;
 
             loop_timer = nh_.createTimer(ros::Duration((double)1/update_rate), &ObstacleFeed::updateObstacles, this);
-            update_service = nh_.advertiseService("update_trigger", &ObstacleFeed::UpdateCallback, this);
-            update_service_int = nh_.advertiseService("update_trigger_int", &ObstacleFeed::UpdateCallbackInt, this);
+            //update_service = nh_.advertiseService("update_trigger", &ObstacleFeed::UpdateCallback, this);
+            //update_service_int = nh_.advertiseService("update_trigger_int", &ObstacleFeed::UpdateCallbackInt, this);
 
             // Check predefined obstacles for errors
             if (!(lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_pose_y_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_pose_heading_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_dim_minor_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_dim_major_.size()))
@@ -237,6 +237,7 @@ void ObstacleFeed::optitrackCallback(const nav_msgs::Path& predicted_path)
             ellipse.trajectory.poses[path_it].pose.position.x = obst2_.poses[path_it].pose.position.x;
             ellipse.trajectory.poses[path_it].pose.position.y = obst2_.poses[path_it].pose.position.y;
         }
+        ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
     else if  (predicted_path.header.frame_id == "2"){
@@ -262,6 +263,7 @@ void ObstacleFeed::optitrackCallback(const nav_msgs::Path& predicted_path)
             ellipse.trajectory.poses[path_it].pose.position.x = obst1_.poses[path_it].pose.position.x;
             ellipse.trajectory.poses[path_it].pose.position.y = obst1_.poses[path_it].pose.position.y;
         }
+        ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
     //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");

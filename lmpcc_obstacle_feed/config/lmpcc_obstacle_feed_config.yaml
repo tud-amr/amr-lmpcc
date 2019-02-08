@@ -22,18 +22,18 @@ publish:
 subscribe:
     detections: none #detection_3d
     optitrack: future_obj_track
-    pedestrians: /spencer/perception/tracked_persons
+    pedestrians: none #/spencer/perception/tracked_persons
 
 # Detection criteria
 detected_obstacles:
-    distance_threshold: 5
+    distance_threshold: 10
     obstacle_threshold: 10
     min_obstacle_volume: 0.03
     max_obstacle_volume: 1.0
     obstacle_size: 0.3
-    lambda: 0
+    lambda: 0.0015
     major_semiaxis: 0.4
-    minor_semiaxis: 0.2
+    minor_semiaxis: 0.3
 
 # Create predefined obstacles
 predefined_obstacles:
@@ -43,5 +43,5 @@ predefined_obstacles:
     v_x: [1.0, -1.0]
     v_y: [0.0, 0.0]
     dimensions:
-        minor_semiaxis: [0.4, 0.4]
-        major_semiaxis: [0.4, 0.2]
+        minor_semiaxis: [0.6, 0.5]
+        major_semiaxis: [0.6, 0.6]

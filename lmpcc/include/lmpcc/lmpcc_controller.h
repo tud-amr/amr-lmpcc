@@ -247,7 +247,18 @@ public:
 
     //Search window parameters
     bool goal_reached_;
-    bool plan_;
+    bool plan_,replan_;
+
+    //MPCC Implementation
+    std::vector<double> X_road, Y_road, Theta_road;
+    double dist_spline_pts_;
+    double total_length_;
+    int n_clothoid,n_pts;
+    int waypoints_size_;
+    double path_length_;
+    //Search window parameters
+    bool last_poly_;
+
     std::vector<double> collision_free_C1, collision_free_C2, collision_free_C3, collision_free_C4, collision_free_a1x ,collision_free_a1y, collision_free_a2x ,collision_free_a2y, collision_free_a3x ,collision_free_a3y, collision_free_a4x ,collision_free_a4y , collision_free_xmin, collision_free_xmax, collision_free_ymin, collision_free_ymax;
 
     ReferencePath referencePath;
@@ -316,6 +327,11 @@ private:
 	void moveitGoalCB();
     void actionSuccess();
     void actionAbort();
+
+    void  reset_solver();
+    double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
+    void Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta);
+    void ConstructRefPath();
 
     /** Reconfigurable parameters **/
     Eigen::VectorXd min_velocity_limit_,max_velocity_limit_;
