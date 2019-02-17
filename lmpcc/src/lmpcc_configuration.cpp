@@ -182,46 +182,6 @@ bool LMPCC_configuration::initialize()
         return false;
     }
 
-    // Occupation threshold of searched occupancy grid
-    if (!nh_config.getParam ("collision_avoidance/local_map", use_local_map_) )
-    {
-        ROS_WARN(" Parameter '/collision_avoidance/local_map not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    // Maxium search distance of area free of static obstacles
-    if (!nh_config.getParam ("collision_avoidance/delta_max", delta_max_) )
-    {
-        ROS_WARN(" Parameter '/collision_avoidance/delta_max not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    // Occupation threshold of searched occupancy grid
-    if (!nh_config.getParam ("collision_avoidance/free_space_assumption", free_space_assumption_) )
-    {
-        ROS_WARN(" Parameter '/collision_avoidance/free_space_assumption not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    // Occupation threshold of searched occupancy grid
-    if (!nh_config.getParam ("collision_avoidance/occupied_threshold", occupied_threshold_) )
-    {
-        ROS_WARN(" Parameter '/collision_avoidance/occupied_threshold not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    if (!nh_config.getParam ("collision_avoidance/map_resolution", map_resolution_) )
-    {
-        ROS_WARN(" Parameter '/collision_avoidance/map_resolution not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    if (!nh_config.getParam ("collision_avoidance/clean_ped_window_size", clean_ped_window_size_) )
-    {
-        ROS_WARN(" Parameter '/collision_avoidance/clean_ped_window_size not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
     /** OCP weight factors **/
     // Contouring control weight factors
     if (!nh_config.getParam ("ocp/weights/contour_weight_factors", contour_weight_factors_) )

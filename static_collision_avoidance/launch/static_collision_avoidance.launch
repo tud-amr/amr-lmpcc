@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- Debug Info -->
+    <arg name="debug" default="false" />
+    <arg unless="$(arg debug)" name="launch_prefix" value="" />
+    <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+    <arg name="debug_config_parameter" default="false"/>
+    <arg name="debug_kinematic_cal" default="false"/>
+    <arg name="debug_collision_detection" default="false"/>
+    <arg name="config" default="$(find mobile_robot_state_publisher)"/>
+
+    <param name="collision_avoidance/local_map" value="true" type="bool" />
+    <param name="simulation_mode" value="false" type="bool" />
+
+    <!-- Publishes the voxel grid to rviz for display -->
+    <node pkg="costmap_2d" type="costmap_2d_markers" name="voxel_visualizer">
+      <remap from="voxel_grid" to="costmap/voxel_grid"/>
+    </node>
+
+    <!-- Run the costmap node -->
+    <node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" >
+      <rosparam file="$(find static_collision_avoidance)/config/local_map_params.yaml" command="load" ns="costmap" />
+    </node>
+
+    <rosparam file="$(find static_collision_avoidance)/config/static_avoidance_config.yaml" command="load"/>
+
+    <node pkg="static_collision_avoidance" type="static_collision_avoidance_node" name="static_collision_avoidance_node" cwd="node" respawn="false" output="screen"/>
+
+</launch>
