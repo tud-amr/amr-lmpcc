@@ -19,8 +19,18 @@ bool LMPCC_configuration::initialize()
     ros::NodeHandle nh;
 
     /** Simulation mode **/
-    nh.param("simulation_mode", simulation_mode_, bool(false));
-    nh.param("gaebo_simulation", gazebo_simulation_, bool(false));
+
+    if (!nh.getParam ("simulation_mode", simulation_mode_) )
+    {
+        ROS_WARN(" Parameter 'simulation_mode' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    if (!nh.getParam ("gazebo_simulation", gazebo_simulation_) )
+    {
+        ROS_WARN(" Parameter 'gazebo_simulation' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
 
     /** Debug modes **/
     nh.param("activate_output", activate_output_, bool(true));

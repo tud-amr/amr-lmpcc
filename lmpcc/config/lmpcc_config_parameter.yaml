@@ -5,7 +5,7 @@ gazebo_simulation: false
 # Debug modes
 activate_output: true
 activate_debug_output: false
-activate_timing_output: true
+activate_timing_output: false
 activate_visualization: true
 activate_feedback_message: false
 
@@ -55,6 +55,12 @@ global_path:
     y: [0.5, 0.5, 0.5, 2, 4, 4, 6, 7.5, 6, 4, 3.5, 3.5, 3.5, 3.5, 2, 0.5]
     theta: [0, 0, 0, 1.57, 0, 0, 1.57, 3.14, -1.57, 3.14, 3.14,  3.14, 3.14, 3.14, -1.57, 0]
     reference_velocity: 1.0
+# faculty corridor
+global_path:
+    x: [50, 55, 60, 65,70,80]
+    y: [-0.5, -0.5, -0.5, -0.5,-0.5,-0.5]
+    theta: [0,0,0,0,0,0]
+    reference_velocity: 0.5
 
 # Collision avoidance parameters
 collision_avoidance:

@@ -62,8 +62,6 @@
 
 // joint trajectory interface
 #include <control_msgs/FollowJointTrajectoryAction.h>
-#include <lmpcc/trajAction.h>
-#include <lmpcc/trajActionGoal.h>
 
 // navigation messages
 #include <nav_msgs/Path.h>
@@ -188,6 +186,14 @@ public:
         return eigen_vector;
     }
 
+    double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
+
+    void Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta);
+
+    void ConstructRefPath();
+
+    void  reset_solver();
+
     /** public data members */
 
     ros::ServiceClient update_trigger;
@@ -224,15 +230,18 @@ public:
     double lag_error_;
     int n_search_points_;
     int n_obstacles_;
-
+    int traj_i;
     std::string cmd_topic_;
 
 	//Spline trajectory generation
-	tk::spline ref_path_x, ref_path_y;
-
-	//MPCC Implementation
+    std::vector<double> X_road, Y_road, Theta_road;
+    double dist_spline_pts_;
+    double total_length_;
+    double path_length_;
     std::vector<double> ss,xx,yy,vv;
-    std::vector<double> obst1_x, obst1_y, obst2_x, obst2_y;
+	tk::spline ref_path_x, ref_path_y;
+    std::vector<double> X_global_;
+    int n_clothoid_,n_pts_;
 
     //Search window parameters
     bool goal_reached_;
@@ -261,10 +270,6 @@ private:
     visualization_msgs::MarkerArray traj_marker_array_;
 
     Eigen::Vector3d current_state_, last_state_;
-    Eigen::Vector3d goal_pose_, prev_pose_;
-
-	//TRajectory execution variables
-	int idx;
 
 	visualization_msgs::Marker ellips1, global_plan;
 
@@ -272,42 +277,11 @@ private:
     lmpcc_msgs::lmpcc_obstacle_array obstacles_;
     lmpcc_msgs::lmpcc_obstacle_array obstacles_init_;
 
-    // Current and last position and velocity from joint state callback
-    //Eigen::VectorXd current_position_;
-    Eigen::VectorXd last_position_;
-    //Eigen::VectorXd current_velocity_;
-    Eigen::VectorXd last_velocity_;
-
     // Type of variable used to publish joint velocity
     geometry_msgs::Twist controlled_velocity_;
 
     // lmpcc configuration
     boost::shared_ptr<LMPCC_configuration> lmpcc_config_;
-
-    // move to goal position action
-
-	/** Visualization variables **/
-
-    /** Action interface **/
-    moveit_msgs::RobotTrajectory traj;      //MoveIt TRAJECTORY VARIABLE
-
-    lmpcc::moveResult move_action_result_;
-    lmpcc::moveFeedback move_action_feedback_;
-    lmpcc::trajActionFeedback moveit_action_feedback_;
-    lmpcc::trajActionResult moveit_action_result_;
-
-    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::moveAction> > move_action_server_;
-
-    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::trajAction> > moveit_action_server_;
-
-    void moveGoalCB();
-    void movePreemptCB();
-	void moveitGoalCB();
-    void actionSuccess();
-    void actionAbort();
-
-    /** Reconfigurable parameters **/
-    Eigen::VectorXd min_velocity_limit_,max_velocity_limit_;
 
     Eigen::VectorXd cost_contour_weight_factors_;
     Eigen::VectorXd cost_control_weight_factors_;

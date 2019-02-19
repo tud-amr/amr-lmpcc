@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /MarkerArray1
         - /MarkerArray4
         - /Map2
       Splitter Ratio: 0.5
@@ -374,7 +375,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /collision_free_circles
+      Marker Topic: /robot_collision_space
       Name: MarkerArray
       Namespaces:
         {}
@@ -393,7 +394,7 @@ Visualization Manager:
       Marker Topic: /global_plan
       Name: MarkerArray
       Namespaces:
-        trajectory: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -447,7 +448,7 @@ Visualization Manager:
       Marker Topic: /collision_free_area
       Name: MarkerArray
       Namespaces:
-        trajectory: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988
@@ -503,7 +504,7 @@ Visualization Manager:
       Pitch: 1.35479999
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.67539978
+      Yaw: 4.67039967
     Saved: ~
 Window Geometry:
   Displays:
