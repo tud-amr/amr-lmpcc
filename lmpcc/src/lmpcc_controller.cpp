@@ -219,6 +219,7 @@ bool LMPCC::initialize_visuals()
     robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);
     pred_traj_pub_ = nh.advertise<nav_msgs::Path>("predicted_trajectory",1);
     global_plan_pub_ = nh.advertise<visualization_msgs::MarkerArray>("global_plan",1);
+
     traj_pub_ = nh.advertise<visualization_msgs::MarkerArray>("pd_trajectory",1);
 
     /** Initialize local reference path segment publishers **/
@@ -594,7 +595,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 		//publishPredictedOutput();
 		//broadcastPathPose();
         //publishContourError();
-		//cost_.data = acado_getObjective();
+		cost_.data = acado_getObjective();
 		//publishCost();
 
         if (lmpcc_config_->activate_visualization_)
@@ -691,7 +692,6 @@ void LMPCC::moveitGoalCB()
 
     }
 }
-
 
 void LMPCC::movePreemptCB()
 {
@@ -1144,6 +1144,7 @@ void LMPCC::publishFeedback(int& it, double& time)
     feedback_msg.wL = cost_contour_weight_factors_(1);       // weight factor on lag error
     feedback_msg.wV = cost_control_weight_factors_(0);       // weight factor on theta
     feedback_msg.wW = cost_control_weight_factors_(1);
+
 
     // Compute contour errors
     feedback_msg.contour_errors.data.resize(2);

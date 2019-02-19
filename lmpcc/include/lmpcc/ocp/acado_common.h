@@ -200,8 +200,8 @@ real_t evGu[ 600 ];
 /** Matrix of size: 250 x 10 (row major format) */
 real_t EH[ 2500 ];
 
-/** Column vector of size: 8003 */
-real_t objAuxVar[ 8003 ];
+/** Column vector of size: 8006 */
+real_t objAuxVar[ 8006 ];
 
 /** Row vector of size: 98 */
 real_t objValueIn[ 98 ];

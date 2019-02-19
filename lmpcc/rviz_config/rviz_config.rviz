@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /MarkerArray4
+        - /Map2
       Splitter Ratio: 0.5
     Tree Height: 847
   - Class: rviz/Selection
@@ -170,10 +172,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         chassis_link:
           Alpha: 1
           Show Axes: false
@@ -527,5 +525,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1855
-  X: 65
+  X: 1985
   Y: 24

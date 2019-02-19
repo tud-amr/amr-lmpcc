@@ -94,6 +94,7 @@
 //splines
 #include <tkspline/spline.h>
 #include <lmpcc/Clothoid.h>
+#include <static_collision_avoidance/collision_free_polygon.h>
 
 typedef double real_t;
 
@@ -151,9 +152,7 @@ public:
      */
     void PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& persons);
 
-    void LocalMapCallBack(const nav_msgs::OccupancyGrid local_map);
-
-    void LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update);
+    void FreeAreaCallBack(const static_collision_avoidance::collision_free_polygon& msg);
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -191,7 +190,7 @@ public:
 
     /** public data members */
 
-    ros::ServiceClient map_service_, update_trigger;
+    ros::ServiceClient update_trigger;
 
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -200,29 +199,18 @@ public:
     ros::Subscriber obstacle_feed_sub_;
 
     // subscriber for pedestrian feed
-    ros::Subscriber pedestrian_feed_sub_;
+    ros::Subscriber pedestrian_feed_sub_,collision_free_sub_;
 
-    // subscriber for obstacle feed
-    ros::Subscriber local_map_sub_;
-    // subscriber for obstacle feed
-    ros::Subscriber local_map_updates_sub_;
-    ros::Publisher local_map_pub_;
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_, global_plan_pub_,local_spline_traj_pub1_, local_spline_traj_pub2_, local_spline_traj_pub3_, local_spline_traj_pub4_, local_spline_traj_pub5_, contour_error_pub_, feedback_pub_, collision_free_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_, global_plan_pub_,local_spline_traj_pub1_, local_spline_traj_pub2_, local_spline_traj_pub3_, local_spline_traj_pub4_, local_spline_traj_pub5_, contour_error_pub_, feedback_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
 	nav_msgs::Path local_spline_traj1_,local_spline_traj2_,local_spline_traj3_,local_spline_traj4_,local_spline_traj5_;
-	nav_msgs::OccupancyGrid global_map_, local_map_, static_map_;
-    nav_msgs::GetMap map_srv_;
 
-    bool clean_pedestrians_;
-    int clean_offset_x_;
-    int clean_offset_y_;
-    int pedestrian_occ_level_;
     lmpcc_msgs::IntTrigger obstacle_trigger;
 
 	int segment_counter;
@@ -235,6 +223,7 @@ public:
     double contour_error_;
     double lag_error_;
     int n_search_points_;
+    int n_obstacles_;
 
     std::string cmd_topic_;
 
@@ -277,7 +266,7 @@ private:
 	//TRajectory execution variables
 	int idx;
 
-	visualization_msgs::Marker ellips1, cube1, global_plan;
+	visualization_msgs::Marker ellips1, global_plan;
 
     // Obstacles
     lmpcc_msgs::lmpcc_obstacle_array obstacles_;
@@ -327,10 +316,6 @@ private:
     double repulsive_weight_;
 
     double reference_velocity_;
-    bool use_local_map_;
-    double collision_free_delta_max_, collision_free_delta_min_;
-    bool free_space_assumption_;
-    int occupied_threshold_;
 
     bool enable_output_;
     bool loop_mode_;
@@ -380,39 +365,7 @@ private:
 
 	void broadcastPathPose();
 
-     /**
-     * @brief ComputeCollisionFreeArea: Compute the collision free are around the prediction horizon, approximated by circles located at each discretization step
-     */
-    void ComputeCollisionFreeArea();
-
-    /**
-     * @brief searchRadius: Find the true radius from an occupancy grid index to the first occupied cell
-     * @param x_i: Index of grid cell in x direction
-     * @param y_i: Index of grid cell in y direction
-     */
-    void computeConstraint(int x_i, int y_i, double x_path, double y_path, double psi_path, int N);
-
-    /**
-     * @brief getOccupancy: Returns the occupancy cell value at specified index
-     * @param x_i: Index of grid cell in x direction
-     * @param y_i: Index of grid cell in y direction
-     */
-    int getOccupancy(int x_i, int y_i);
-
-    /**
-     * @brief getRotatedOccupancy: Returns the occupancy cell value at specified index, for a rotated map
-     * @param x_i: Index of grid cell in x direction
-     * @param y_i: Index of grid cell in y direction
-     * @param psi: Rotation of the map
-     */
-    int getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi);
-
     void ZRotToQuat(geometry_msgs::Pose& pose);
-
-    /**
-     * @brief publishPosConstraint: Publish the approximated collision free area as a markerarray
-     */
-    void publishPosConstraint();
 
     void publishFeedback(int& it, double& time);
 
