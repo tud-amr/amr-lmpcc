@@ -192,8 +192,35 @@ bool ObstacleFeed::UpdateCallback(std_srvs::Empty::Request& request, std_srvs::E
     return true;
 }
 
+bool ObstacleFeed::UpdateCallback()
+{
+
+    for (int obst_it = 0; obst_it < obstacles_.lmpcc_obstacles.size(); obst_it++)
+    {
+        obstacles_.lmpcc_obstacles[obst_it].trajectory.header.stamp = ros::Time::now();
+
+        obstacles_.lmpcc_obstacles[obst_it].pose = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[1].pose;
+
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = obstacles_.lmpcc_obstacles[obst_it].pose.position.x + dt_*traj_it*lmpcc_obstacle_feed_config_->v_x_.at(obst_it);
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = obstacles_.lmpcc_obstacles[obst_it].pose.position.y + dt_*traj_it*lmpcc_obstacle_feed_config_->v_y_.at(obst_it);
+        }
+    }
+
+    return true;
+}
+
 void ObstacleFeed::updateObstacles(const ros::TimerEvent& event)
 {
+    if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 2)
+    {
+        UpdateCallback();
+    }
     // Publish ellipsoid obstacles
     publishObstacles(obstacles_);
     // Visualize ellipsoid obstacles

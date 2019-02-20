@@ -41,7 +41,7 @@ collision_avoidance:
     n_obstacles: 2
     map_resolution: 0.05
     clean_ped_window_size: 0.2
-    local_map: true
+    local_map: false
     delta_max: 2
     free_space_assumption: false
     occupied_threshold: 70

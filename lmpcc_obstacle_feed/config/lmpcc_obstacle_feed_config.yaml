@@ -1,13 +1,13 @@
 # Obstacle feed mode (0 = sensor mode, 1 = OptiTrack mode, 2 = predefined obstacles)
 # need to recompile after changing!
-obstacle_feed_mode: 0
+obstacle_feed_mode: 2
 
 # Debugging info
 activate_debug_output: true
 activate_visualization: true
 
 # Rate at which ellipse obstacles should be send out
-update_rate: 20
+update_rate: 10
 discretization_steps: 25
 prediction_horizon: 5
 
@@ -34,11 +34,11 @@ detected_obstacles:
 
 # Create predefined obstacles
 predefined_obstacles:
-    pose_x: [2, 8]
-    pose_y: [-0.3, 1]
-    heading: [0, 1.6]
-    v_x: [1.0, -1.0]
+    pose_x: [85, 55]
+    pose_y: [0, -1]
+    heading: [0, 0]
+    v_x: [-0.5, 0.15]
     v_y: [0.0, 0.0]
     dimensions:
         minor_semiaxis: [0.4, 0.4]
-        major_semiaxis: [0.4, 0.2]
+        major_semiaxis: [0.2, 0.2]
