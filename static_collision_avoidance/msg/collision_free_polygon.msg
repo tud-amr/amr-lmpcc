@@ -14,3 +14,4 @@ float64[] collision_free_xmin
 float64[] collision_free_xmax
 float64[] collision_free_ymin
 float64[] collision_free_ymax
+float64 computation_time

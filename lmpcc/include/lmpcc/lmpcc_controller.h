@@ -190,6 +190,8 @@ public:
 
     void Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta);
 
+    void computeContourError(void);
+
     void ConstructRefPath();
 
     void  reset_solver();

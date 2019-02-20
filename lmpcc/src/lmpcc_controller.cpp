@@ -216,7 +216,7 @@ bool LMPCC::initialize_visuals()
     ellips1.header.frame_id = lmpcc_config_->planning_frame_;
     ellips1.ns = "trajectory";
     ellips1.action = visualization_msgs::Marker::ADD;
-    ellips1.lifetime = ros::Duration(0.1);
+    ellips1.lifetime = ros::Duration(1);
     ellips1.scale.x = r_discs_*2.0;
     ellips1.scale.y = r_discs_*2.0;
     ellips1.scale.z = 0.05;
@@ -701,11 +701,12 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
             acado_feedbackStep();
 
             if(j > 6){
-                acadoVariables.od[(ACADO_NOD * N_iter) + 49] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 50] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 51] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 52] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 53] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N;
+                //acadoVariables.od[(ACADO_NOD * N_iter) + 49] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
+                //acadoVariables.od[(ACADO_NOD * N_iter) + 50] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
+                //acadoVariables.od[(ACADO_NOD * N_iter) + 51] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
+                //acadoVariables.od[(ACADO_NOD * N_iter) + 52] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
+                //acadoVariables.od[(ACADO_NOD * N_iter) + 53] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
+                acadoVariables.od[(ACADO_NOD * N_iter) + 42] = cost_control_weight_factors_(0)*0.8;
             }
 
 //            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
@@ -724,15 +725,10 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 		cost_.data = acado_getObjective();
 		//publishCost();
 
-        if (lmpcc_config_->activate_visualization_)
-        {
-            publishPredictedTrajectory();
-            publishPredictedCollisionSpace();
-            publishLocalRefPath();
-        }
-
-		if (lmpcc_config_->activate_feedback_message_)
+	if (lmpcc_config_->activate_feedback_message_){
+            computeContourError();
             publishFeedback(j,te_);
+        }
 
 
         if (lmpcc_config_->activate_timing_output_)
@@ -746,6 +742,12 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 	else {
 		controlled_velocity_pub_.publish(controlled_velocity_);
         update_trigger.call(obstacle_trigger);
+        if (lmpcc_config_->activate_visualization_)
+        {
+            publishPredictedTrajectory();
+            publishPredictedCollisionSpace();
+            publishLocalRefPath();
+        }
 
 	}
 
@@ -1157,6 +1159,27 @@ void LMPCC::publishContourError(void){
     contour_error_pub_.publish(errors);
 }
 
+void LMPCC::computeContourError(void){
+
+    // Compute contour and lag error to publish
+    double x_path, y_path, dx_path, dy_path, abs_grad, dx_path_norm, dy_path_norm;
+
+    x_path = (referencePath.ref_path_x.m_a[segment_counter]*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_x.m_b[segment_counter]*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_x.m_c[segment_counter]*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_x.m_d[segment_counter]);
+    y_path = (referencePath.ref_path_y.m_a[segment_counter]*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_y.m_b[segment_counter]*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_y.m_c[segment_counter]*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_y.m_d[segment_counter]);
+    dx_path = (3*referencePath.ref_path_x.m_a[segment_counter]*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter]) + 2*referencePath.ref_path_x.m_b[segment_counter]*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_x.m_c[segment_counter]);
+    dy_path = (3*referencePath.ref_path_y.m_a[segment_counter]*(acadoVariables.x[3]-ss[segment_counter])*(acadoVariables.x[3]-ss[segment_counter]) + 2*referencePath.ref_path_y.m_b[segment_counter]*(acadoVariables.x[3]-ss[segment_counter]) + referencePath.ref_path_y.m_c[segment_counter]);
+
+    abs_grad = sqrt(pow(dx_path,2) + pow(dy_path,2));
+
+    dx_path_norm = dx_path/abs_grad;
+    dy_path_norm = dy_path/abs_grad;
+
+    contour_error_ =  dy_path_norm * (acadoVariables.x[0] - x_path) - dx_path_norm * (acadoVariables.x[1] - y_path);
+    lag_error_ = -dx_path_norm * (acadoVariables.x[0] - x_path) - dy_path_norm * (acadoVariables.x[1] - y_path);
+
+}
+
+
 void LMPCC::ZRotToQuat(geometry_msgs::Pose& pose)
 {
     pose.orientation.w = cos(pose.orientation.z * 0.5);
@@ -1176,7 +1199,7 @@ void LMPCC::publishFeedback(int& it, double& time)
     feedback_msg.cost = cost_.data;
     feedback_msg.iterations = it;
     feedback_msg.computation_time = time;
-    feedback_msg.freespace_time = te_collision_free_;
+    //feedback_msg.freespace_time = te_collision_free_;
     feedback_msg.kkt = acado_getKKT();
 
     feedback_msg.wC = cost_contour_weight_factors_(0);       // weight factor on contour error

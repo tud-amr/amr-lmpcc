@@ -115,7 +115,7 @@ bool StaticEnvironment::initialize(){
     cube1.header.frame_id = planning_frame_;
     cube1.ns = "trajectory";
     cube1.action = visualization_msgs::Marker::ADD;
-    cube1.lifetime = ros::Duration(0.1);
+    cube1.lifetime = ros::Duration(1);
 
     collision_free_C1.resize(prediction_steps_);
     collision_free_C2.resize(prediction_steps_);
@@ -161,8 +161,6 @@ void StaticEnvironment::PredictedTrajectoryCallback(const nav_msgs::Path msg){
 
     ComputeCollisionFreeArea();
 
-    publishPosConstraint();
-
     constraint_msg.collision_free_a1x = collision_free_a1x;
     constraint_msg.collision_free_a1y = collision_free_a1y;
     constraint_msg.collision_free_a2x = collision_free_a2x;
@@ -181,8 +179,11 @@ void StaticEnvironment::PredictedTrajectoryCallback(const nav_msgs::Path msg){
     constraint_msg.collision_free_xmax = collision_free_xmax;
     constraint_msg.collision_free_ymin = collision_free_ymin;
     constraint_msg.collision_free_ymax = collision_free_ymax;
+    constraint_msg.computation_time = te_collision_free_;
 
     collision_constraint_pub_.publish(constraint_msg);
+
+    publishPosConstraint();
 }
 
 int StaticEnvironment::getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi) {
