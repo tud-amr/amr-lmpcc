@@ -1,6 +1,6 @@
 # Obstacle feed mode (0 = sensor mode, 1 = OptiTrack mode, 2 = predefined obstacles)
 # need to recompile after changing!
-obstacle_feed_mode: 2
+obstacle_feed_mode: 0
 
 # Debugging info
 activate_debug_output: true
@@ -27,7 +27,7 @@ subscribe:
 # Detection criteria
 detected_obstacles:
     distance_threshold: 5
-    obstacle_threshold: 10
+    obstacle_threshold: 2
     min_obstacle_volume: 0.03
     max_obstacle_volume: 1.0
     obstacle_size: 0.3

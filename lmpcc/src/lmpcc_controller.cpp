@@ -706,7 +706,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                 //acadoVariables.od[(ACADO_NOD * N_iter) + 51] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
                 //acadoVariables.od[(ACADO_NOD * N_iter) + 52] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
                 //acadoVariables.od[(ACADO_NOD * N_iter) + 53] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
-                acadoVariables.od[(ACADO_NOD * N_iter) + 42] = cost_control_weight_factors_(0)*0.8;
+                //acadoVariables.od[(ACADO_NOD * N_iter) + 42] = cost_control_weight_factors_(0)*0.8;
             }
 
 //            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
@@ -734,7 +734,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
         if (lmpcc_config_->activate_timing_output_)
     		ROS_INFO_STREAM("Solve time " << te_ * 1e6 << " us");
 
-	}
+	
 
     if(!enable_output_ || acado_getKKT() > 1e-4) {
 		publishZeroJointVelocity();
@@ -750,6 +750,7 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
         }
 
 	}
+}
 
 }
 

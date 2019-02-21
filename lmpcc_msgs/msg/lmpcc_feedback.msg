@@ -34,6 +34,8 @@ float64 obsth_1
 float64 obsta_1
 float64 obstb_1
 
+float64[] robot_state
+
 std_msgs/Float64MultiArray contour_errors
 
 geometry_msgs/Twist computed_control

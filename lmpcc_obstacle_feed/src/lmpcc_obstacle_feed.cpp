@@ -414,7 +414,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         local_ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
-    //ROS_INFO_STREAM("Publish and visualize obstacles");
+    ROS_INFO_STREAM("Publish and visualize obstacles" << n);
     if(local_ellipses.lmpcc_obstacles.size()>0){
         publishObstacles(local_ellipses);
         visualizeObstacles(local_ellipses);

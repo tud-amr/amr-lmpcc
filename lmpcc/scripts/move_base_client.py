@@ -24,7 +24,7 @@ import move_base_msgs.msg as move
 
 # faculty corridor
 #global_path:
-x= [50, 55, 60, 65,70,80]
+x= [55, 60, 65,70,75,80]
 y= [-0.5, -0.5, -0.5, -0.5,-0.5,-0.5]
 theta= [0,0,0,0,0,0]
 reference_velocity= 0.5
