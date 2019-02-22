@@ -7,7 +7,7 @@ activate_output: true
 activate_debug_output: false
 activate_timing_output: false
 activate_visualization: true
-activate_feedback_message: false
+activate_feedback_message: true
 
 # Controller frequency in hz
 controller_frequency: 20

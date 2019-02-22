@@ -316,8 +316,8 @@ void StaticEnvironment::ComputeCollisionFreeArea()
 
     te_collision_free_ = double(std::chrono::duration_cast <std::chrono::milliseconds> (end-start).count());
 
-    if (activate_timing_output_)
-        ROS_INFO_STREAM("Free space solve time " << te_collision_free_  << " ms");
+    //if (activate_timing_output_)
+        //ROS_INFO_STREAM("Free space solve time " << te_collision_free_  << " ms");
 }
 
 void StaticEnvironment::computeConstraint(int x_i, int y_i, double x_path, double y_path, double psi_path, int N)
@@ -465,7 +465,7 @@ int StaticEnvironment::getOccupancy(int x_i, int y_i)
 
 void StaticEnvironment::publishPosConstraint(){
 
-    ROS_INFO("StaticEnvironment::publishPosConstraint");
+    //ROS_INFO("StaticEnvironment::publishPosConstraint");
     visualization_msgs::MarkerArray collision_free;
     double x_center, y_center;
 

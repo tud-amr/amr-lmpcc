@@ -828,7 +828,7 @@ void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 
 void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
-    ROS_INFO("LMPCC::ObstacleCallBack");
+    //ROS_INFO("LMPCC::ObstacleCallBack");
     lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
     total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 

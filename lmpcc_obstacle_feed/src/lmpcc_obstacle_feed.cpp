@@ -335,13 +335,13 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
 //        objectArray_.objects[object_it].pose.position.y = objectArray_.objects[object_it].pose.position.y + 2;
 
         //ROS_INFO_STREAM("-- Compute distance of obstacle to robot: " );
-        distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x,2) + pow(person.tracks[object_it].pose.pose.position.y,2));
+        distance = 1;//sqrt(pow(person.tracks[object_it].pose.pose.position.x,2) + pow(person.tracks[object_it].pose.pose.position.y,2));
         ped.bbox.center.position.x = person.tracks[object_it].pose.pose.position.x;
         ped.bbox.center.position.y = person.tracks[object_it].pose.pose.position.y;
         ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.x;
         ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.y;
-        ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.z;
-        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.w;
+        ped.bbox.center.orientation.z = person.tracks[object_it].pose.pose.orientation.z;
+        ped.bbox.center.orientation.w = person.tracks[object_it].pose.pose.orientation.w;
          //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
 
         // If distance is smaller than defined bound, add to obstacles
@@ -414,7 +414,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         local_ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
-    ROS_INFO_STREAM("Publish and visualize obstacles" << n);
+    //ROS_INFO_STREAM("Publish and visualize obstacles" << n);
     if(local_ellipses.lmpcc_obstacles.size()>0){
         publishObstacles(local_ellipses);
         visualizeObstacles(local_ellipses);

@@ -26,7 +26,7 @@ subscribe:
 
 # Detection criteria
 detected_obstacles:
-    distance_threshold: 5
+    distance_threshold: 10
     obstacle_threshold: 2
     min_obstacle_volume: 0.03
     max_obstacle_volume: 1.0
@@ -40,5 +40,5 @@ predefined_obstacles:
     v_x: [-0.5, 0.15]
     v_y: [0.0, 0.0]
     dimensions:
-        minor_semiaxis: [0.4, 0.4]
-        major_semiaxis: [0.2, 0.2]
+        minor_semiaxis: [0.5, 0.5]
+        major_semiaxis: [0.3, 0.3]
