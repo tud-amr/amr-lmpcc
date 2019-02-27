@@ -1,0 +1,24 @@
+- git:
+    local-name: predictive_control
+    uri: https://github.com/bbrito/predictive_control.git
+    version: master
+- git:
+    local-name: base_moveit_controller_manager
+    uri: https://github.com/bbrito/base_moveit_controller_manager.git
+    version: master
+- git:
+    local-name: mobile_robot_state_publisher
+    uri: https://github.com/bbrito/mobile_robot_state_publisher.git
+    version: master
+- git:
+    local-name: jackal_moveit_description
+    uri: https://github.com/bbrito/jackal_moveit_description.git
+    version: master
+- git:
+    local-name: obstacle_feed
+    uri: https://github.com/bbrito/obstacle_feed.git
+    version: master
+- git:
+    local-name: autoware_msgs
+    uri: https://github.com/bbrito/autoware_msgs
+    version: master

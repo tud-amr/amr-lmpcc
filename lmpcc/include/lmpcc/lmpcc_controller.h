@@ -62,8 +62,6 @@
 
 // joint trajectory interface
 #include <control_msgs/FollowJointTrajectoryAction.h>
-#include <lmpcc/trajAction.h>
-#include <lmpcc/trajActionGoal.h>
 
 // navigation messages
 #include <nav_msgs/Path.h>
@@ -94,6 +92,7 @@
 //splines
 #include <tkspline/spline.h>
 #include <lmpcc/Clothoid.h>
+#include <static_collision_avoidance/collision_free_polygon.h>
 
 typedef double real_t;
 
@@ -151,9 +150,7 @@ public:
      */
     void PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& persons);
 
-    void LocalMapCallBack(const nav_msgs::OccupancyGrid local_map);
-
-    void LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpdate local_map_update);
+    void FreeAreaCallBack(const static_collision_avoidance::collision_free_polygon& msg);
 
     /**
      * @brief getTransform: Find transformation stamed rotation is in the form of quaternion
@@ -189,9 +186,19 @@ public:
         return eigen_vector;
     }
 
+    double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
+
+    void Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta);
+
+    void computeContourError(void);
+
+    void ConstructRefPath();
+
+    void  reset_solver();
+
     /** public data members */
 
-    ros::ServiceClient map_service_, update_trigger;
+    ros::ServiceClient update_trigger;
 
     // joint state subsciber to get current joint value
     ros::Subscriber robot_state_sub_;
@@ -200,29 +207,18 @@ public:
     ros::Subscriber obstacle_feed_sub_;
 
     // subscriber for pedestrian feed
-    ros::Subscriber pedestrian_feed_sub_;
+    ros::Subscriber pedestrian_feed_sub_,collision_free_sub_;
 
-    // subscriber for obstacle feed
-    ros::Subscriber local_map_sub_;
-    // subscriber for obstacle feed
-    ros::Subscriber local_map_updates_sub_;
-    ros::Publisher local_map_pub_;
     // controlled joint velocity, should be control velocity of controller
     ros::Publisher controlled_velocity_pub_;
 
     // publish trajectory
-    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_, global_plan_pub_,local_spline_traj_pub1_, local_spline_traj_pub2_, local_spline_traj_pub3_, local_spline_traj_pub4_, local_spline_traj_pub5_, contour_error_pub_, feedback_pub_, collision_free_pub_;
+    ros::Publisher traj_pub_, tr_path_pub_, pred_traj_pub_, pred_cmd_pub_,cost_pub_,robot_collision_space_pub_, global_plan_pub_,local_spline_traj_pub1_, local_spline_traj_pub2_, local_spline_traj_pub3_, local_spline_traj_pub4_, local_spline_traj_pub5_, contour_error_pub_, feedback_pub_;
 	//Predicted trajectory
 	nav_msgs::Path pred_traj_;
 	nav_msgs::Path pred_cmd_;
 	nav_msgs::Path local_spline_traj1_,local_spline_traj2_,local_spline_traj3_,local_spline_traj4_,local_spline_traj5_;
-	nav_msgs::OccupancyGrid global_map_, local_map_, static_map_;
-    nav_msgs::GetMap map_srv_;
 
-    bool clean_pedestrians_;
-    int clean_offset_x_;
-    int clean_offset_y_;
-    int pedestrian_occ_level_;
     lmpcc_msgs::IntTrigger obstacle_trigger;
 
 	int segment_counter;
@@ -235,30 +231,23 @@ public:
     double contour_error_;
     double lag_error_;
     int n_search_points_;
-
+    int n_obstacles_;
+    int traj_i;
     std::string cmd_topic_;
 
 	//Spline trajectory generation
-	tk::spline ref_path_x, ref_path_y;
-
-	//MPCC Implementation
-    std::vector<double> ss,xx,yy,vv;
-    std::vector<double> obst1_x, obst1_y, obst2_x, obst2_y;
-
-    //Search window parameters
-    bool goal_reached_;
-    bool plan_,replan_;
-
-    //MPCC Implementation
     std::vector<double> X_road, Y_road, Theta_road;
     double dist_spline_pts_;
     double total_length_;
-    int n_clothoid,n_pts;
-    int waypoints_size_;
     double path_length_;
-    //Search window parameters
-    bool last_poly_;
+    std::vector<double> ss,xx,yy,vv;
+	tk::spline ref_path_x, ref_path_y;
+    std::vector<double> X_global_;
+    int n_clothoid_,n_pts_;
 
+    //Search window parameters
+    bool goal_reached_;
+    bool plan_;
     std::vector<double> collision_free_C1, collision_free_C2, collision_free_C3, collision_free_C4, collision_free_a1x ,collision_free_a1y, collision_free_a2x ,collision_free_a2y, collision_free_a3x ,collision_free_a3y, collision_free_a4x ,collision_free_a4y , collision_free_xmin, collision_free_xmax, collision_free_ymin, collision_free_ymax;
 
     ReferencePath referencePath;
@@ -283,58 +272,18 @@ private:
     visualization_msgs::MarkerArray traj_marker_array_;
 
     Eigen::Vector3d current_state_, last_state_;
-    Eigen::Vector3d goal_pose_, prev_pose_;
 
-	//TRajectory execution variables
-	int idx;
-
-	visualization_msgs::Marker ellips1, cube1, global_plan;
+	visualization_msgs::Marker ellips1, global_plan;
 
     // Obstacles
     lmpcc_msgs::lmpcc_obstacle_array obstacles_;
     lmpcc_msgs::lmpcc_obstacle_array obstacles_init_;
-
-    // Current and last position and velocity from joint state callback
-    //Eigen::VectorXd current_position_;
-    Eigen::VectorXd last_position_;
-    //Eigen::VectorXd current_velocity_;
-    Eigen::VectorXd last_velocity_;
 
     // Type of variable used to publish joint velocity
     geometry_msgs::Twist controlled_velocity_;
 
     // lmpcc configuration
     boost::shared_ptr<LMPCC_configuration> lmpcc_config_;
-
-    // move to goal position action
-
-	/** Visualization variables **/
-
-    /** Action interface **/
-    moveit_msgs::RobotTrajectory traj;      //MoveIt TRAJECTORY VARIABLE
-
-    lmpcc::moveResult move_action_result_;
-    lmpcc::moveFeedback move_action_feedback_;
-    lmpcc::trajActionFeedback moveit_action_feedback_;
-    lmpcc::trajActionResult moveit_action_result_;
-
-    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::moveAction> > move_action_server_;
-
-    boost::scoped_ptr<actionlib::SimpleActionServer<lmpcc::trajAction> > moveit_action_server_;
-
-    void moveGoalCB();
-    void movePreemptCB();
-	void moveitGoalCB();
-    void actionSuccess();
-    void actionAbort();
-
-    void  reset_solver();
-    double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
-    void Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta);
-    void ConstructRefPath();
-
-    /** Reconfigurable parameters **/
-    Eigen::VectorXd min_velocity_limit_,max_velocity_limit_;
 
     Eigen::VectorXd cost_contour_weight_factors_;
     Eigen::VectorXd cost_control_weight_factors_;
@@ -343,10 +292,6 @@ private:
     double repulsive_weight_;
 
     double reference_velocity_;
-    bool use_local_map_;
-    double collision_free_delta_max_, collision_free_delta_min_;
-    bool free_space_assumption_;
-    int occupied_threshold_;
 
     bool enable_output_;
     bool loop_mode_;
@@ -396,39 +341,7 @@ private:
 
 	void broadcastPathPose();
 
-     /**
-     * @brief ComputeCollisionFreeArea: Compute the collision free are around the prediction horizon, approximated by circles located at each discretization step
-     */
-    void ComputeCollisionFreeArea();
-
-    /**
-     * @brief searchRadius: Find the true radius from an occupancy grid index to the first occupied cell
-     * @param x_i: Index of grid cell in x direction
-     * @param y_i: Index of grid cell in y direction
-     */
-    void computeConstraint(int x_i, int y_i, double x_path, double y_path, double psi_path, int N);
-
-    /**
-     * @brief getOccupancy: Returns the occupancy cell value at specified index
-     * @param x_i: Index of grid cell in x direction
-     * @param y_i: Index of grid cell in y direction
-     */
-    int getOccupancy(int x_i, int y_i);
-
-    /**
-     * @brief getRotatedOccupancy: Returns the occupancy cell value at specified index, for a rotated map
-     * @param x_i: Index of grid cell in x direction
-     * @param y_i: Index of grid cell in y direction
-     * @param psi: Rotation of the map
-     */
-    int getRotatedOccupancy(int x_i, int search_x, int y_i, int search_y, double psi);
-
     void ZRotToQuat(geometry_msgs::Pose& pose);
-
-    /**
-     * @brief publishPosConstraint: Publish the approximated collision free area as a markerarray
-     */
-    void publishPosConstraint();
 
     void publishFeedback(int& it, double& time);
 

@@ -1,0 +1,17 @@
+float64[] collision_free_C1
+float64[] collision_free_C2
+float64[] collision_free_C3
+float64[] collision_free_C4
+float64[] collision_free_a1x
+float64[] collision_free_a1y
+float64[] collision_free_a2x
+float64[] collision_free_a2y
+float64[] collision_free_a3x
+float64[] collision_free_a3y
+float64[] collision_free_a4x
+float64[] collision_free_a4y
+float64[] collision_free_xmin
+float64[] collision_free_xmax
+float64[] collision_free_ymin
+float64[] collision_free_ymax
+float64 computation_time

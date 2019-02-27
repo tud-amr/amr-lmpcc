@@ -1,0 +1,49 @@
+# Simulation mode
+simulation_mode: false             # Is set in launch file!
+gazebo_simulation: false
+
+# Debug modes
+activate_output: true
+activate_debug_output: false
+activate_timing_output: true
+activate_visualization: true
+activate_feedback_message: false
+
+# Controller frequency in hz
+controller_frequency: 20
+
+# Dimensions of controlled vehicle
+robot_dimensions:
+    n_discs: 1
+    ego_l: 0.5
+    ego_w: 0.4
+
+# Optimal Control Problem dimensions
+prediction_steps: 25
+state_dimension: 5
+
+# Input and output topics
+publish:
+    cmd:          cmd_vel
+    cmd_sim:      jackal_velocity_controller/cmd_vel
+subscribe:
+    robot_state:  robot_state
+    obstacles:    ellipse_objects_feed
+    pedestrians:  none  #/spencer/perception/tracked_persons
+
+# Coordinate frame definitions
+frames:
+    robot_base_link:  base_link
+    planning_frame:   map
+
+# Collision avoidance parameters
+collision_avoidance:
+    n_obstacles: 2
+    map_resolution: 0.05
+    clean_ped_window_size: 0.2
+    local_map: false
+    delta_max: 2
+    free_space_assumption: false
+    occupied_threshold: 70
+
+

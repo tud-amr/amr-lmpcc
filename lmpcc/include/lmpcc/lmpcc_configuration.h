@@ -64,9 +64,6 @@ public:
     bool activate_visualization_;
     bool activate_feedback_message_;
 
-    /**Map parameters **/
-    double map_resolution_;
-    int clean_ped_window_size_;
     /** controller frequency in Hz **/
     double controller_frequency_;
 
@@ -96,18 +93,13 @@ public:
     int n_search_points_;
     double search_window_size_;
 
+    int n_obstacles_;
+
     /** predefined global reference path **/
     std::vector<double> ref_x_;
     std::vector<double> ref_y_;
     std::vector<double> ref_theta_;
     double reference_velocity_;
-
-    /** Number of dynamic obstacles **/
-    int n_obstacles_;
-    bool use_local_map_;
-    double delta_max_;
-    bool free_space_assumption_;
-    int occupied_threshold_;
 
     /** OCP weight factors **/
     std::vector<double> contour_weight_factors_;

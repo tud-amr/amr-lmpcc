@@ -148,6 +148,8 @@ void ObstacleFeed::reconfigureCallback(lmpcc_obstacle_feed::ObstacleFeedConfig& 
     obstacle_size_ = config.obstacle_size;
 }
 
+
+
 bool ObstacleFeed::UpdateCallbackInt(lmpcc_msgs::IntTrigger::Request& request, lmpcc_msgs::IntTrigger::Response& response)
 {
     int rate = request.value;
@@ -196,8 +198,35 @@ bool ObstacleFeed::UpdateCallback(std_srvs::Empty::Request& request, std_srvs::E
     return true;
 }
 
+bool ObstacleFeed::UpdateCallback()
+{
+
+    for (int obst_it = 0; obst_it < obstacles_.lmpcc_obstacles.size(); obst_it++)
+    {
+        obstacles_.lmpcc_obstacles[obst_it].trajectory.header.stamp = ros::Time::now();
+
+        obstacles_.lmpcc_obstacles[obst_it].pose = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[1].pose;
+
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = obstacles_.lmpcc_obstacles[obst_it].pose.position.x + dt_*traj_it*lmpcc_obstacle_feed_config_->v_x_.at(obst_it);
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = obstacles_.lmpcc_obstacles[obst_it].pose.position.y + dt_*traj_it*lmpcc_obstacle_feed_config_->v_y_.at(obst_it);
+        }
+    }
+
+    return true;
+}
+
 void ObstacleFeed::updateObstacles(const ros::TimerEvent& event)
 {
+    if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 2)
+    {
+        UpdateCallback();
+    }
     // Publish ellipsoid obstacles
     publishObstacles(obstacles_);
     // Visualize ellipsoid obstacles
@@ -373,15 +402,16 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
     {
 //        // SHIFTING ALL OBSTACLES IN SPACE
 //        objectArray_.objects[object_it].pose.position.y = objectArray_.objects[object_it].pose.position.y + 2;
-
+        Eigen::VectorXd robot_pose;
+        getTransform("odom","base_link" ,robot_pose);
         //ROS_INFO_STREAM("-- Compute distance of obstacle to robot: " );
-        distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x,2) + pow(person.tracks[object_it].pose.pose.position.y,2));
+        distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x-robot_pose(0),2) + pow(person.tracks[object_it].pose.pose.position.y-robot_pose(1),2));
         ped.bbox.center.position.x = person.tracks[object_it].pose.pose.position.x;
         ped.bbox.center.position.y = person.tracks[object_it].pose.pose.position.y;
         ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.x;
         ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.y;
-        ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.z;
-        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.w;
+        ped.bbox.center.orientation.z = person.tracks[object_it].pose.pose.orientation.z;
+        ped.bbox.center.orientation.w = person.tracks[object_it].pose.pose.orientation.w;
          //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
 
         // If distance is smaller than defined bound, add to obstacles
@@ -454,7 +484,7 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         local_ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
-    //ROS_INFO_STREAM("Publish and visualize obstacles");
+    //ROS_INFO_STREAM("Publish and visualize obstacles" << n);
     if(local_ellipses.lmpcc_obstacles.size()>0){
         publishObstacles(local_ellipses);
         visualizeObstacles(local_ellipses);
@@ -639,24 +669,24 @@ bool ObstacleFeed::getTransform(const std::string& from, const std::string& to, 
                                                     stamped_tf.getRotation().getW()
             );
 
-            if (lmpcc_obstacle_feed_config_->activate_debug_output_)
-            {
-                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
-                                    << "qy:" << stamped_tf.getRotation().getY()
-                                    << "qz:" << stamped_tf.getRotation().getZ()
-                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
-            }
+            //if (lmpcc_obstacle_feed_config_->activate_debug_output_)
+            //{
+                //std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
+                                   // << "qy:" << stamped_tf.getRotation().getY()
+                                   // << "qz:" << stamped_tf.getRotation().getZ()
+                                   // << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
+            //}
 
             tf::Matrix3x3 quat_matrix(quat);
             quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
 
-            if (lmpcc_obstacle_feed_config_->activate_debug_output_)
-            {
-                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
-                                    << " pitch:" << stamped_pose(4)
-                                    << " yaw:" << stamped_pose(5)
-                                    << "\033[0m" <<std::endl;
-            }
+            //if (lmpcc_obstacle_feed_config_->activate_debug_output_)
+            //{
+                //std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
+                  //                  << " pitch:" << stamped_pose(4)
+                  //                  << " yaw:" << stamped_pose(5)
+                   //                 << "\033[0m" <<std::endl;
+            //}
 
             transform = true;
         }
@@ -668,8 +698,8 @@ bool ObstacleFeed::getTransform(const std::string& from, const std::string& to, 
 
     else
     {
-        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
-                         from.c_str(), to.c_str());
+        //ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+        //                 from.c_str(), to.c_str());
     }
 
     return transform;

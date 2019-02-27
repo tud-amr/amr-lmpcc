@@ -1,0 +1,38 @@
+global_frame: map
+robot_base_frame: base_link
+update_frequency: 20.0
+publish_frequency: 10.0
+width: 10.0
+height: 10.0
+resolution: 0.05
+static_map: true
+rolling_window: true
+
+map_type: costmap
+origin_z: 0.0
+z_resolution: 1
+z_voxels: 2
+
+obstacle_range: 10
+raytrace_range: 5.0
+
+publish_voxel_map: false
+transform_tolerance: 0.5
+meter_scoring: true
+
+footprint: [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
+#footprint: [[-0.3, -0.2], [-0.3, 0.2], [0.3, 0.2], [0.3, -0.2]]
+footprint_padding: 0.1
+
+plugins:
+#- {name: obstacles_layer, type: "costmap_2d::ObstacleLayer"}
+- {name: static_layer, type: "costmap_2d::StaticLayer"}
+#- {name: inflater_layer, type: "costmap_2d::InflationLayer"}
+
+obstacles_layer:
+  #  observation_sources: scan1 scan2 scan3
+  observation_sources: scan2 scan3
+  #  scan1: {sensor_frame: hokuyo_base_scan, data_type: LaserScan, topic: hokuyo, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}
+#  scan1: {sensor_frame: VLP16 , data_type: LaserScan, topic: scan, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}
+  scan2: {sensor_frame: VLP16 , data_type: LaserScan, topic: velodyne_scan1, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 10, raytrace_range: 3.0}
+  scan3: {sensor_frame: VLP16 , data_type: LaserScan, topic: velodyne_scan2, marking: true, clearing: true, min_obstacle_height: -2.0, max_obstacle_height: 2.0, obstacle_range: 2.5, raytrace_range: 3.0}

@@ -95,6 +95,7 @@ private:
     void OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses);
     bool UpdateCallback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool UpdateCallbackInt(lmpcc_msgs::IntTrigger::Request& request, lmpcc_msgs::IntTrigger::Response& response);
+    bool UpdateCallback();
 
     lmpcc_msgs::lmpcc_obstacle FitEllipse(const vision_msgs::Detection3D& object, const double& distance);
     lmpcc_msgs::lmpcc_obstacle FitEllipse(const geometry_msgs::Pose& object, const double& distance);
