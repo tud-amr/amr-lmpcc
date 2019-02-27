@@ -5,7 +5,7 @@ publish_frequency: 10.0
 width: 10.0
 height: 10.0
 resolution: 0.05
-static_map: false
+static_map: true
 rolling_window: true
 
 map_type: costmap
@@ -25,8 +25,8 @@ footprint: [[-0.21, -0.165], [-0.21, 0.165], [0.21, 0.165], [0.21, -0.165]]
 footprint_padding: 0.1
 
 plugins:
-- {name: obstacles_layer, type: "costmap_2d::ObstacleLayer"}
-#- {name: static_layer, type: "costmap_2d::StaticLayer"}
+#- {name: obstacles_layer, type: "costmap_2d::ObstacleLayer"}
+- {name: static_layer, type: "costmap_2d::StaticLayer"}
 #- {name: inflater_layer, type: "costmap_2d::InflationLayer"}
 
 obstacles_layer:
