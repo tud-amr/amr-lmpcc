@@ -1,5 +1,0 @@
-controller_list:
-  - name: BaseController
-    type: BaseController
-    joints:
-      - base
