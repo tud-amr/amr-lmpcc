@@ -206,7 +206,7 @@ void StaticEnvironment::LocalMapCallBack(const nav_msgs::OccupancyGrid local_map
         //ROS_WARN("StaticEnvironment::LocalMapCallBack");
         local_map_ = local_map;
         local_map_pub_.publish(local_map_);
-        //ROS_INFO("local map update received!");
+        ROS_INFO("local map update received!");
     }
 }
 
@@ -214,7 +214,7 @@ void StaticEnvironment::LocalMapUpdatesCallBack(const map_msgs::OccupancyGridUpd
 {
 
     if (use_local_map_ ) {
-        //ROS_ERROR("StaticEnvironment::LocalMapUpdatesCallBack");
+        ROS_ERROR("StaticEnvironment::LocalMapUpdatesCallBack");
         int index = 0;
         geometry_msgs::Pose obs;
         for (int y = local_map_update.y; y < local_map_update.y + local_map_update.height; y++) {
@@ -316,8 +316,8 @@ void StaticEnvironment::ComputeCollisionFreeArea()
 
     te_collision_free_ = double(std::chrono::duration_cast <std::chrono::milliseconds> (end-start).count());
 
-    //if (activate_timing_output_)
-        //ROS_INFO_STREAM("Free space solve time " << te_collision_free_  << " ms");
+    if (activate_timing_output_)
+        ROS_INFO_STREAM("Free space solve time " << te_collision_free_  << " ms");
 }
 
 void StaticEnvironment::computeConstraint(int x_i, int y_i, double x_path, double y_path, double psi_path, int N)
@@ -465,7 +465,7 @@ int StaticEnvironment::getOccupancy(int x_i, int y_i)
 
 void StaticEnvironment::publishPosConstraint(){
 
-    //ROS_INFO("StaticEnvironment::publishPosConstraint");
+    ROS_INFO("StaticEnvironment::publishPosConstraint");
     visualization_msgs::MarkerArray collision_free;
     double x_center, y_center;
 
