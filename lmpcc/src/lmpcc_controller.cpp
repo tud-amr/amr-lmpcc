@@ -1,5 +1,56 @@
-
-//This file containts read parameter from server, callback, call class objects, control all class, objects of all class
+/*
+ /*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ * Copyright (c) 2019 \n
+ * TU DELFT \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * ROS stack name: arm-lmpcc
+ * \note
+ * ROS package name: lmpcc
+ *
+ * \author
+ * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
+ *         Boaz, Floor email:
+ *
+ * \date Date of creation: June, 2019
+ *
+ * \brief
+ *
+ * *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the TU Delft nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************/
 
 #include <lmpcc/lmpcc_controller.h>
 
@@ -8,19 +59,12 @@ ACADOworkspace acadoWorkspace;
 
 LMPCC::~LMPCC()
 {
-    clearDataMember();
 }
 
 void LMPCC::spinNode()
 {
     //ROS_INFO(" lmpcc node is running, now it's 'Spinning Node'");
     ros::spin();
-}
-
-// Free memory
-void LMPCC::clearDataMember()
-{
-
 }
 
 // Initialization of the LMPCC planer
@@ -62,6 +106,7 @@ bool LMPCC::initialize()
         slack_weight_ = lmpcc_config_->slack_weight_;
         repulsive_weight_ = lmpcc_config_->repulsive_weight_;
         reference_velocity_ = lmpcc_config_->reference_velocity_;
+        reduced_reference_velocity_ = reference_velocity_;
         n_search_points_ = lmpcc_config_->n_search_points_;
         window_size_ = lmpcc_config_->search_window_size_;
 
@@ -93,7 +138,6 @@ bool LMPCC::initialize()
 	    /** Subscribers **/
         robot_state_sub_ = nh.subscribe(lmpcc_config_->robot_state_, 1, &LMPCC::StateCallBack, this);
         obstacle_feed_sub_ = nh.subscribe(lmpcc_config_->ellipse_objects_feed_, 1, &LMPCC::ObstacleCallBack, this);
-        pedestrian_feed_sub_ = nh.subscribe(lmpcc_config_->pedestrians_objects_feed_, 1, &LMPCC::PedestrianCallBack, this);
         collision_free_sub_ = nh.subscribe("collision_constraints", 1, &LMPCC::FreeAreaCallBack, this);
         /** Publishers **/
         controlled_velocity_pub_ = nh.advertise<geometry_msgs::Twist>(cmd_topic_,1);
@@ -101,6 +145,9 @@ bool LMPCC::initialize()
 		cost_pub_ = nh.advertise<std_msgs::Float64>("cost",1);
         contour_error_pub_ = nh.advertise<std_msgs::Float64MultiArray>("contour_error",1);
 		feedback_pub_ = nh.advertise<lmpcc_msgs::lmpcc_feedback>("controller_feedback",1);
+
+        reset_simulation_client_ = nh.serviceClient<std_srvs::Empty>("/gazebo/reset_world");
+        reset_ekf_client_ = nh.serviceClient<robot_localization::SetPose>("/set_pose");
 
 		ros::Duration(1).sleep();
 
@@ -121,7 +168,8 @@ bool LMPCC::initialize()
         for (int obst_it = 0; obst_it < lmpcc_config_->n_obstacles_; obst_it++)
         {
             obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
-
+            obstacles_.lmpcc_obstacles[obst_it].major_semiaxis.resize(ACADO_N);
+            obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis.resize(ACADO_N);
             for(int i=0;i < ACADO_N; i++)
             {
                 obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.x = current_state_(0) - 100;
@@ -137,9 +185,6 @@ bool LMPCC::initialize()
         }
 
 		computeEgoDiscs();
-
-		// Initialize OCP solver
-        acado_initializeSolver( );
 
         collision_free_C1.resize(ACADO_N);
         collision_free_C2.resize(ACADO_N);
@@ -161,8 +206,6 @@ bool LMPCC::initialize()
         collision_free_ymax.resize(ACADO_N);
 
         plan_ = false;
-        traj_i=0;
-        X_global_.resize(100);
 
 	// Initialize global reference path
         referencePath.SetGlobalPath(lmpcc_config_->ref_x_, lmpcc_config_->ref_y_, lmpcc_config_->ref_theta_);
@@ -285,22 +328,10 @@ void LMPCC::reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level){
     {
         /** Initialize constant Online Data Variables **/
         reset_solver();
-        int N_iter;
-        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
-            acadoVariables.od[(ACADO_NOD * N_iter) + 60] = r_discs_;                                // radius of car discs
-            acadoVariables.od[(ACADO_NOD * N_iter) + 61] = 0; //x_discs_[1];                        // position of the car discs
-        }
-
         /** Set task flags and counters **/
         segment_counter = 0;
-
         goal_reached_ = false;
 
-        //ConstructRefPath();
-        //publishLocalRefPath();                      // Publish local reference path for visualization
-        //publishGlobalPlan();                        // Publish global reference path for visualization
-        //traj_i=0;
-        /** Initialize local reference path **/
         referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
 
         if (lmpcc_config_->activate_debug_output_)
@@ -351,77 +382,6 @@ double LMPCC::spline_closest_point(double s_min, double s_max, double s_guess, d
 
 }
 
-void LMPCC::Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta) {
-
-    /*double k, dk, L;
-    n_clothoid_ = lmpcc_config_->n_points_clothoid_;
-    n_pts_ = lmpcc_config_->n_points_spline_;
-    std::vector<double> X(n_clothoid_), Y(n_clothoid_);
-    std::vector<double> X_all, Y_all, S_all;
-    total_length_= 0;
-    S_all.push_back(0);
-
-    for (int i = 0; i < x.size()-1; i++){
-        Clothoid::buildClothoid(x[i], y[i], theta[i], x[i+1], y[i+1], theta[i+1], k, dk, L);
-        Clothoid::pointsOnClothoid(x[i], y[i], theta[i], k, dk, L, n_clothoid_, X, Y);
-        if (i==0){
-            X_all.insert(X_all.end(), X.begin(), X.end());
-            Y_all.insert(Y_all.end(), Y.begin(), Y.end());
-        }
-        else{
-            X.erase(X.begin()+0);
-            Y.erase(Y.begin()+0);
-            X_all.insert(X_all.end(), X.begin(), X.end());
-            Y_all.insert(Y_all.end(), Y.begin(), Y.end());
-        }
-        total_length_ += L;
-        for (int j=1; j< n_clothoid_; j++){
-            S_all.push_back(S_all[j-1+i*(n_clothoid_-1)]+L/(n_clothoid_-1));
-            //ROS_INFO_STREAM("S_all: " << S_all[j]);
-        }
-        //ROS_INFO_STREAM("X_all: " << X_all[i]);
-        //ROS_INFO_STREAM("Y_all: " << Y_all[i]);
-    }
-
-    ref_path_x.set_points(S_all, X_all);
-    ref_path_y.set_points(S_all, Y_all);
-
-    dist_spline_pts_ = total_length_ / (n_pts_ );
-    //ROS_INFO_STREAM("dist_spline_pts_: " << dist_spline_pts_);
-    ss.resize(n_pts_);
-    xx.resize(n_pts_);
-    yy.resize(n_pts_);
-
-    for (int i=0; i<n_pts_; i++){
-        ss[i] = dist_spline_pts_ *i;
-        xx[i] = ref_path_x(ss[i]);
-        yy[i] = ref_path_y(ss[i]);
-        ROS_INFO_STREAM("ss: " << ss[i]);
-        ROS_INFO_STREAM("xx: " << xx[i]);
-        ROS_INFO_STREAM("yy: " << yy[i]);
-        path_length_ = ss[i];
-    }
-
-    ref_path_x.set_points(ss,xx);
-    ref_path_y.set_points(ss,yy);
-*/
-}
-
-void LMPCC::ConstructRefPath(){
-    ROS_INFO_STREAM("ConstructRefPath");
-    X_road.resize(lmpcc_config_->ref_x_.size());
-    Y_road.resize(lmpcc_config_->ref_x_.size());
-    Theta_road.resize(lmpcc_config_->ref_x_.size());
-    for (int ref_point_it = 0; ref_point_it < lmpcc_config_->ref_x_.size(); ref_point_it++)
-    {
-        X_road[ref_point_it] = lmpcc_config_->ref_x_.at(ref_point_it);
-        Y_road[ref_point_it] = lmpcc_config_->ref_y_.at(ref_point_it);
-        Theta_road[ref_point_it] = lmpcc_config_->ref_theta_.at(ref_point_it);
-    }
-    ROS_INFO_STREAM("Ref_path");
-    Ref_path(X_road, Y_road, Theta_road);
-}
-
 void LMPCC::computeEgoDiscs()
 {
     //ROS_INFO_STREAM("computeEgoDiscs");
@@ -445,6 +405,7 @@ void LMPCC::computeEgoDiscs()
 
 void LMPCC::broadcastPathPose(){
 
+    // Tracking position along the path
     //ROS_INFO_STREAM("broadcastPathPose");
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
@@ -465,6 +426,7 @@ void LMPCC::broadcastPathPose(){
 
 void LMPCC::broadcastTF(){
 
+    // used for fake simulations without gazebo
     ROS_INFO_STREAM("broadcastTF");
 	geometry_msgs::TransformStamped transformStamped;
 	transformStamped.header.stamp = ros::Time::now();
@@ -520,48 +482,29 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
         acadoVariables.u[2] = 0.0000001;           //slack variable
         acadoVariables.u[3] = 0.0000001;           //slack variable
 
-        /*double smin;
-        smin = spline_closest_point(ss[traj_i], 1000, acadoVariables.x[ACADO_NX+3], window_size_, n_search_points_);
-        acadoVariables.x[3] = smin;
-        acadoVariables.x0[3] = smin;
-
-        if(acadoVariables.x[3] > ss[traj_i + 1]) {
-
-            if (traj_i + 2 == ss.size()) {
-                goal_reached_ = true;
-                //ROS_ERROR_STREAM("GOAL REACHED");
-            } else {
-                traj_i++;
-                ROS_ERROR_STREAM("SWITCH SPLINE " << acadoVariables.x[3]);
-            }
-        }
-	*/
-
 		if(acadoVariables.x[3] > ss[2]) {
 
-		    if (segment_counter + lmpcc_config_->n_local_ > referencePath.GlobalPathLenght()*lmpcc_config_->n_poly_per_clothoid_){
+            if((std::sqrt(std::pow(current_state_(0)-15,2)+std::pow(current_state_(1),2))<1) || (current_state_(0)>15)){
 		        goal_reached_ = true;
-                //ROS_ERROR_STREAM("GOAL REACHED");
+                ROS_ERROR_STREAM("GOAL REACHED");
 
-//                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
                 if (loop_mode_)
                 {
-                    segment_counter = 0;
-                    goal_reached_ = false;
+                    reset_simulation_client_.call(reset_msg_);
+                    reset_ekf_client_.call(reset_pose_msg_);
 
                     /** Re-initialize local reference path **/
                     referencePath.InitLocalRefPath(lmpcc_config_->n_local_,lmpcc_config_->n_poly_per_clothoid_,ss,xx,yy,vv);
-
+                    reset_solver();
                     acadoVariables.x[3] = referencePath.GetS0();
+
                     //ROS_ERROR_STREAM("LOOP STARTED");
                 }
             } else{
 			    segment_counter++;
                 referencePath.UpdateLocalRefPath(segment_counter, ss, xx, yy, vv);
                 acadoVariables.x[3] = referencePath.GetS0();
-                //ROS_ERROR_STREAM("SWITCH SPLINE, segment_counter =  " << segment_counter);
 
-//                for (int vv_it = 0; vv_it < 5; vv_it ++){std::cout << "vv: " << vv[vv_it] << std::endl;}
 		    }
         }
 
@@ -570,13 +513,17 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
             smin = referencePath.ClosestPointOnPath(current_state_, ss[1], 100, acadoVariables.x[3], window_size_, n_search_points_);
             acadoVariables.x[3] = smin;
         }
-        else
-            acadoVariables.x[3] = acadoVariables.x[3];
+
+        for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+            reduced_reference_velocity_ = current_state_(3) + 1 * 0.25 * (N_iter+1);
+            if (reduced_reference_velocity_ > reference_velocity_)
+                reduced_reference_velocity_ = reference_velocity_;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = reduced_reference_velocity_;
+        }
 
 
         for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
 
-            // Initialize Online Data variables
             acadoVariables.od[(ACADO_NOD * N_iter) + 0 ] = referencePath.ref_path_x.m_a[1];        // spline coefficients
             acadoVariables.od[(ACADO_NOD * N_iter) + 1 ] = referencePath.ref_path_x.m_b[1];
             acadoVariables.od[(ACADO_NOD * N_iter) + 2 ] = referencePath.ref_path_x.m_c[1];        // spline coefficients
@@ -613,72 +560,46 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
             acadoVariables.od[(ACADO_NOD * N_iter) + 30] = referencePath.ref_path_y.m_c[4];        // spline coefficients
             acadoVariables.od[(ACADO_NOD * N_iter) + 31] = referencePath.ref_path_y.m_d[4];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = referencePath.ref_path_x.m_a[5];         // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = referencePath.ref_path_x.m_b[5];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = referencePath.ref_path_x.m_c[5];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = referencePath.ref_path_x.m_d[5];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 36] = referencePath.ref_path_y.m_a[5];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 37] = referencePath.ref_path_y.m_b[5];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 38] = referencePath.ref_path_y.m_c[5];        // spline coefficients
-            acadoVariables.od[(ACADO_NOD * N_iter) + 39] = referencePath.ref_path_y.m_d[5];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 32] = cost_contour_weight_factors_(0);       // weight factor on contour error
+            acadoVariables.od[(ACADO_NOD * N_iter) + 33] = cost_contour_weight_factors_(1);       // weight factor on lag error
+            acadoVariables.od[(ACADO_NOD * N_iter) + 34] = cost_control_weight_factors_(0);      // weight factor on theta
+            acadoVariables.od[(ACADO_NOD * N_iter) + 35] = cost_control_weight_factors_(1);      // weight factor on v
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 40] = cost_contour_weight_factors_(0);       // weight factor on contour error
-            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = cost_contour_weight_factors_(1);       // weight factor on lag error
-            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = cost_control_weight_factors_(0);      // weight factor on theta
-            acadoVariables.od[(ACADO_NOD * N_iter) + 43] = cost_control_weight_factors_(1);      // weight factor on v
+            acadoVariables.od[(ACADO_NOD * N_iter) + 36 ] = ss[1];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 37 ] = ss[2];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 38 ] = ss[3];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 39 ] = ss[4];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 44 ] = ss[1];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 45 ] = ss[2];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 46 ] = ss[3];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 47 ] = ss[4];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 48 ] = ss[5];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 41] = slack_weight_;        // weight on the slack variable
+            acadoVariables.od[(ACADO_NOD * N_iter) + 42] = repulsive_weight_;    // weight on the repulsive cost
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 49] = reference_velocity_;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 50] = reference_velocity_;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 51] = reference_velocity_;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 52] = reference_velocity_;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 53] = reference_velocity_;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 43] = collision_free_a1x[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 44] = collision_free_a2x[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 45] = collision_free_a3x[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 46] = collision_free_a4x[N_iter];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 54] = ss[2] + 0.02;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 55] = ss[3] + 0.02;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 56] = ss[4] + 0.02;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 57] = ss[5] + 0.02;
+            acadoVariables.od[(ACADO_NOD * N_iter) + 47] = collision_free_a1y[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 48] = collision_free_a2y[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 49] = collision_free_a3y[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 50] = collision_free_a4y[N_iter];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 58] = slack_weight_;        // weight on the slack variable
-            acadoVariables.od[(ACADO_NOD * N_iter) + 59] = repulsive_weight_;    // weight on the repulsive cost
+            acadoVariables.od[(ACADO_NOD * N_iter) + 51] = collision_free_C1[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 52] = collision_free_C2[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 53] = collision_free_C3[N_iter];
+            acadoVariables.od[(ACADO_NOD * N_iter) + 54] = collision_free_C4[N_iter];
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 62] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 63] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 64] = obstacles_.lmpcc_obstacles[0].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 65] = obstacles_.lmpcc_obstacles[0].major_semiaxis;                                // major semiaxis of obstacle 1
-            acadoVariables.od[(ACADO_NOD * N_iter) + 66] = obstacles_.lmpcc_obstacles[0].minor_semiaxis;                                // minor semiaxis of obstacle 1
+            for (int obst_it = 0; obst_it < lmpcc_config_->n_obstacles_; obst_it++) {
+                //ROS_INFO_STREAM("Next agent" << obst_it <<"at time "<< N_iter <<" pos: " << obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[N_iter].pose.position.x);
+                acadoVariables.od[(ACADO_NOD * N_iter) +
+                                  55+obst_it*3] = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 1
+                acadoVariables.od[(ACADO_NOD * N_iter) +
+                                  56+obst_it*3] = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 1
+                acadoVariables.od[(ACADO_NOD * N_iter) +
+                                  57+obst_it*3] = obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 1
+            }
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 67] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.x;      // x position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 68] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.position.y;      // y position of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 69] = obstacles_.lmpcc_obstacles[1].trajectory.poses[N_iter].pose.orientation.z;   // heading of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 70] = obstacles_.lmpcc_obstacles[1].major_semiaxis;                                // major semiaxis of obstacle 2
-            acadoVariables.od[(ACADO_NOD * N_iter) + 71] = obstacles_.lmpcc_obstacles[1].minor_semiaxis;                                // minor semiaxis of obstacle 2
 
-            acadoVariables.od[(ACADO_NOD * N_iter) + 72] = std::atan2(referencePath.ref_path_y.deriv(1,acadoVariables.x[3]),referencePath.ref_path_x.deriv(1,acadoVariables.x[3]));
-            acadoVariables.od[(ACADO_NOD * N_iter) + 73] = 0.0;
-            acadoVariables.od[(ACADO_NOD * N_iter) + 74] = collision_free_ymin[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 75] = collision_free_ymax[N_iter];
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 76] = collision_free_a1x[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 77] = collision_free_a2x[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 78] = collision_free_a3x[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 79] = collision_free_a4x[N_iter];
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 80] = collision_free_a1y[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 81] = collision_free_a2y[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 82] = collision_free_a3y[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 83] = collision_free_a4y[N_iter];
-
-            acadoVariables.od[(ACADO_NOD * N_iter) + 84] = collision_free_C1[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 85] = collision_free_C2[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 86] = collision_free_C3[N_iter];
-            acadoVariables.od[(ACADO_NOD * N_iter) + 87] = collision_free_C4[N_iter];
-}
+        }
 
         acadoVariables.x0[ 0 ] = current_state_(0);
         acadoVariables.x0[ 1 ] = current_state_(1);
@@ -691,66 +612,66 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 
         acado_feedbackStep();
 
-//        printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
-
 		int j=1;
-        while (acado_getKKT() > 1e-4 && j < n_iterations_){ //  && acado_getKKT() < 100
+        while (acado_getKKT() > lmpcc_config_->kkt_tolerance_ && j < n_iterations_){
 
 			acado_preparationStep();
 
             acado_feedbackStep();
 
-            if(j > 6){
-                //acadoVariables.od[(ACADO_NOD * N_iter) + 49] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
-                //acadoVariables.od[(ACADO_NOD * N_iter) + 50] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
-                //acadoVariables.od[(ACADO_NOD * N_iter) + 51] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
-                //acadoVariables.od[(ACADO_NOD * N_iter) + 52] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
-                //acadoVariables.od[(ACADO_NOD * N_iter) + 53] = reference_velocity_ - N_iter * reference_velocity_/ACADO_N*0.5;
-                //acadoVariables.od[(ACADO_NOD * N_iter) + 42] = cost_control_weight_factors_(0)*0.8;
+            if(j >6){
+
+                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+                    reduced_reference_velocity_ = current_state_(3) - 0.2 * 0.2 * (N_iter+1);
+                    if(reduced_reference_velocity_ < 0.05)
+                        reduced_reference_velocity_=0;
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 40] = reduced_reference_velocity_;
+                }
+
             }
 
-//            printf("\tReal-Time Iteration:  KKT Tolerance = %.3e\n\n", acado_getKKT());
+            if (current_state_(3) < reference_velocity_) {
+                for (N_iter = 0; N_iter < ACADO_N; N_iter++) {
+                    reduced_reference_velocity_ = current_state_(3) + 0.2 * 0.2* (N_iter+1);
+                    if (reduced_reference_velocity_ > reference_velocity_)
+                        reduced_reference_velocity_ = reference_velocity_;
+                    if(reduced_reference_velocity_ < 0.1)
+                        reduced_reference_velocity_ = 0.1;
 
-            j++;    //        acado_printDifferentialVariables();
+                    acadoVariables.od[(ACADO_NOD * N_iter) + 40] = reduced_reference_velocity_;
+                }
+            }
+
+            j++;
         }
 
-        te_ = acado_toc(&t);
 
 		controlled_velocity_.linear.x = acadoVariables.u[0];
 		controlled_velocity_.angular.z = acadoVariables.u[1];
 
-		//publishPredictedOutput();
-		//broadcastPathPose();
-        //publishContourError();
-		cost_.data = acado_getObjective();
-		//publishCost();
-
-	if (lmpcc_config_->activate_feedback_message_){
-            computeContourError();
-            publishFeedback(j,te_);
+        if(acado_getKKT() < lmpcc_config_->kkt_tolerance_) {
+            if (lmpcc_config_->activate_visualization_) {
+                publishPredictedTrajectory();
+                publishPredictedCollisionSpace();
+                publishLocalRefPath();
+            }
         }
 
-
+        te_ = acado_toc(&t);
         if (lmpcc_config_->activate_timing_output_)
     		ROS_INFO_STREAM("Solve time " << te_ * 1e6 << " us");
 
-	
+        if (lmpcc_config_->activate_feedback_message_){
+            publishFeedback(j,te_);
+        }
+	}
 
-    if(!enable_output_ || acado_getKKT() > 1e-4) {
+    if(!enable_output_ || acado_getKKT() > lmpcc_config_->kkt_tolerance_) {
 		publishZeroJointVelocity();
 	}
 	else {
 		controlled_velocity_pub_.publish(controlled_velocity_);
-        update_trigger.call(obstacle_trigger);
-        if (lmpcc_config_->activate_visualization_)
-        {
-            publishPredictedTrajectory();
-            publishPredictedCollisionSpace();
-            publishLocalRefPath();
-        }
-
 	}
-}
 
 }
 
@@ -779,52 +700,14 @@ void LMPCC::FreeAreaCallBack(const static_collision_avoidance::collision_free_po
 // read current position and velocity of robot joints
 void LMPCC::StateCallBack(const geometry_msgs::Pose::ConstPtr& msg)
 {
-    //ROS_INFO("LMPCC::StateCallBack");
-    if (lmpcc_config_->activate_debug_output_) {
-//        ROS_INFO("LMPCC::StateCallBack");
-    }
 
     last_state_ = current_state_;
 
     current_state_(0) =    msg->position.x;
     current_state_(1) =    msg->position.y;
     current_state_(2) =    msg->orientation.z;
+    current_state_(3) =    msg->position.z;
 }
-
-// This function is used in combination with the matlab kalman filter for person tracking using the OptiTrack system
-//void LMPCC::ObstacleCallBack(const nav_msgs::Path& predicted_path)
-//{
-//    if (predicted_path.poses.size() != lmpcc_config_->discretization_intervals_)
-//    {
-//        ROS_WARN_STREAM("Received obstacle trajectory length is divergent");
-//    }
-//
-//    if (predicted_path.header.frame_id == "1"){
-////        ROS_INFO_STREAM("obstacle 1");
-//
-//        for (int path_it = 0; path_it < ACADO_N ; path_it++)
-//        {
-//            obst1_x[path_it] = predicted_path.poses[path_it].pose.position.x + 1.55;
-//            obst1_y[path_it] = predicted_path.poses[path_it].pose.position.y + 2.75;
-//        }
-//    }
-//    else if  (predicted_path.header.frame_id == "2"){
-////        ROS_INFO_STREAM("obstacle 2");
-//
-//        for (int path_it = 0; path_it < ACADO_N ; path_it++)
-//        {
-//            obst2_x[path_it] = predicted_path.poses[path_it].pose.position.x + 1.55;
-//            obst2_y[path_it] = predicted_path.poses[path_it].pose.position.y + 2.75;
-//        }
-//
-//    }else if  (predicted_path.header.frame_id == "3"){
-//
-//    }
-//    else {
-//        ROS_INFO_STREAM("Obstacle id not recognized");
-//    }
-////    ROS_INFO_STREAM("obst1_x: " << obst1_x[0]);
-//}
 
 void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles)
 {
@@ -834,8 +717,8 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
 
     total_obstacles.lmpcc_obstacles = received_obstacles.lmpcc_obstacles;
 
-//    //ROS_INFO_STREAM("-- Received # obstacles: " << obstacles.Obstacles.size());
-//    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
+    //ROS_INFO_STREAM("-- Received # obstacles: " << received_obstacles.lmpcc_obstacles.size());
+    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
 
     if (received_obstacles.lmpcc_obstacles.size() < lmpcc_config_->n_obstacles_)
     {
@@ -844,96 +727,23 @@ void LMPCC::ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_ob
             total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = current_state_(0) - 100;
             total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = 0;
             total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = 0;
-            total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis = 0.001;
-            total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis = 0.001;
+
 
             for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
             {
                 total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = current_state_(0) - 100;
                 total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = 0;
                 total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = 0;
+                total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis[traj_it] = 0.001;
+                total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis[traj_it] = 0.001;
             }
         }
     }
-
-    //obstacles_.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
 
     for (int total_obst_it = 0; total_obst_it < lmpcc_config_->n_obstacles_; total_obst_it++)
     {
         obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
     }
-}
-
-void LMPCC::PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& person)
-{
-    //ROS_INFO("LMPCC::PedestrianCallBack");
-    lmpcc_msgs::lmpcc_obstacle_array total_obstacles;
-    total_obstacles.lmpcc_obstacles.resize(lmpcc_config_->n_obstacles_);
-
-    //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
-
-    double ysqr, t3, t4;
-    int n = std::min(int(person.tracks.size()),lmpcc_config_->n_obstacles_);
-    for (int obst_it = 0; obst_it < n; obst_it++)
-    {
-        total_obstacles.lmpcc_obstacles[obst_it].pose.position.x = person.tracks[obst_it].pose.pose.position.x;
-        total_obstacles.lmpcc_obstacles[obst_it].pose.position.y = person.tracks[obst_it].pose.pose.position.y;
-
-        // Convert quaternion to RPY
-        ysqr = person.tracks[obst_it].pose.pose.orientation.y * person.tracks[obst_it].pose.pose.orientation.y;
-        t3 = +2.0 * (person.tracks[obst_it].pose.pose.orientation.w * person.tracks[obst_it].pose.pose.orientation.z
-                     + person.tracks[obst_it].pose.pose.orientation.x * person.tracks[obst_it].pose.pose.orientation.y);
-        t4 = +1.0 - 2.0 * (ysqr + person.tracks[obst_it].pose.pose.orientation.z * person.tracks[obst_it].pose.pose.orientation.z);
-
-        //total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = std::atan2(t3, t4);
-        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.x = person.tracks[obst_it].pose.pose.orientation.x;
-        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.y = person.tracks[obst_it].pose.pose.orientation.y;
-        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z = person.tracks[obst_it].pose.pose.orientation.z;
-        total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.w = person.tracks[obst_it].pose.pose.orientation.w;
-        total_obstacles.lmpcc_obstacles[obst_it].major_semiaxis = 0.3;
-        total_obstacles.lmpcc_obstacles[obst_it].minor_semiaxis = 0.2;
-
-        transformPose("odom",lmpcc_config_->planning_frame_,total_obstacles.lmpcc_obstacles[obst_it].pose);
-        // hard coded value of the frame rate of 5 Hz
-        total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
-        for (int traj_it = 0; traj_it < ACADO_N; traj_it++)
-        {
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = person.tracks[obst_it].pose.pose.position.x+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.x;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = person.tracks[obst_it].pose.pose.position.y+traj_it*0.2*person.tracks[obst_it].twist.twist.linear.y;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.x = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.x;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.y = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.y;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.z;
-           total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.w = total_obstacles.lmpcc_obstacles[obst_it].pose.orientation.w;
-
-           transformPose("odom",lmpcc_config_->planning_frame_,total_obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose);
-        }
-    }
-
-    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
-
-    for (int total_obst_it = 0; total_obst_it < n; total_obst_it++)
-    {
-        obstacles_.lmpcc_obstacles[total_obst_it] = total_obstacles.lmpcc_obstacles[total_obst_it];
-    }
-    //ROS_INFO_STREAM("-- Expected # obstacles: " << lmpcc_config_->n_obstacles_);
-    for (int obst_it = n; obst_it < lmpcc_config_->n_obstacles_; obst_it++)
-    {
-        //ROS_INFO_STREAM("3 " << std::endl);
-        //obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.resize(ACADO_N);
-        //ROS_INFO_STREAM("1 " << std::endl);
-        obstacles_.lmpcc_obstacles[obst_it].pose.position.x = current_state_(0) - 1000;
-        obstacles_.lmpcc_obstacles[obst_it].pose.position.y = current_state_(1) - 1000;
-        //ROS_INFO_STREAM("1 " << std::endl);
-        for(int i=0;i < ACADO_N; i++)
-        {
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.x = current_state_(0) - 1000;
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.position.y = current_state_(1) - 1000;
-            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[i].pose.orientation.z = 0;
-            //ROS_INFO_STREAM("2s " << std::endl);
-        }
-        //ROS_INFO_STREAM("4 " << std::endl);
-    }
-    //ROS_INFO_STREAM("Existing pedestrian callback");
 }
 
 bool LMPCC::transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose)
@@ -1200,7 +1010,6 @@ void LMPCC::publishFeedback(int& it, double& time)
     feedback_msg.cost = cost_.data;
     feedback_msg.iterations = it;
     feedback_msg.computation_time = time;
-    //feedback_msg.freespace_time = te_collision_free_;
     feedback_msg.kkt = acado_getKKT();
 
     feedback_msg.wC = cost_contour_weight_factors_(0);       // weight factor on contour error
@@ -1215,7 +1024,6 @@ void LMPCC::publishFeedback(int& it, double& time)
     feedback_msg.contour_errors.data[0] = contour_error_;
     feedback_msg.contour_errors.data[1] = lag_error_;
 
-//    feedback_msg.reference_path = spline_traj2_;
     feedback_msg.prediction_horizon = pred_traj_;
     feedback_msg.robot_state.resize(lmpcc_config_->state_dim_);
 
@@ -1229,23 +1037,8 @@ void LMPCC::publishFeedback(int& it, double& time)
     feedback_msg.computed_control = controlled_velocity_;
 
     feedback_msg.enable_output = enable_output_;
-
     feedback_msg.vRef = reference_velocity_;
 
-    feedback_msg.obstacle_distance1 = sqrt(pow(pred_traj_.poses[0].pose.position.x - obstacles_.lmpcc_obstacles[0].pose.position.x ,2) + pow(pred_traj_.poses[0].pose.position.y - obstacles_.lmpcc_obstacles[0].pose.position.y,2));
-    feedback_msg.obstacle_distance2 = sqrt(pow(pred_traj_.poses[0].pose.position.x - obstacles_.lmpcc_obstacles[1].pose.position.x ,2) + pow(pred_traj_.poses[0].pose.position.y - obstacles_.lmpcc_obstacles[1].pose.position.y,2));
-
-    feedback_msg.obstx_0 = obstacles_.lmpcc_obstacles[0].pose.position.x;
-    feedback_msg.obsty_0 = obstacles_.lmpcc_obstacles[0].pose.position.y;
-    feedback_msg.obsth_0 = obstacles_.lmpcc_obstacles[0].pose.orientation.z;
-    feedback_msg.obsta_0 = obstacles_.lmpcc_obstacles[0].major_semiaxis;
-    feedback_msg.obstb_0 = obstacles_.lmpcc_obstacles[0].minor_semiaxis;
-
-    feedback_msg.obstx_1 = obstacles_.lmpcc_obstacles[1].pose.position.x;
-    feedback_msg.obsty_1 = obstacles_.lmpcc_obstacles[1].pose.position.y;
-    feedback_msg.obsth_1 = obstacles_.lmpcc_obstacles[1].pose.orientation.z;
-    feedback_msg.obsta_1 = obstacles_.lmpcc_obstacles[1].major_semiaxis;
-    feedback_msg.obstb_1 = obstacles_.lmpcc_obstacles[1].minor_semiaxis;
 
     //Search window parameters
     feedback_msg.window = window_size_;

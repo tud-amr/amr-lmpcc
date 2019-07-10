@@ -21,5 +21,6 @@
     <node pkg="lmpcc" type="lmpcc_node" name="lmpcc_node" cwd="node" respawn="false" output="screen"/>
 
     <!-- configured rviz -->
- 
+    <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find lmpcc)/rviz_config/rviz_config.rviz" /-->
+
 </launch>  

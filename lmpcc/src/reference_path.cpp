@@ -1,6 +1,56 @@
-//
-// Created by boaz on 9-10-18.
-//
+/*
+ /*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ * Copyright (c) 2019 \n
+ * TU DELFT \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * ROS stack name: arm-lmpcc
+ * \note
+ * ROS package name: lmpcc
+ *
+ * \author
+ * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
+ *          Boaz, Floor email:
+ *
+ * \date Date of creation: June, 2019
+ *
+ * \brief
+ *
+ * *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the TU Delft nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************/
 
 #include <lmpcc/reference_path.h>
 
@@ -197,7 +247,7 @@ void ReferencePath::UpdateLocalRefPath(int traj_i, std::vector<double> &s_local,
     s0 = s_local[1];
 }
 
-double ReferencePath::ClosestPointOnPath(Eigen::Vector3d current_state, double s_min, double s_max, double s_guess, double window, int n_tries){
+double ReferencePath::ClosestPointOnPath(Eigen::Vector4d current_state, double s_min, double s_max, double s_guess, double window, int n_tries){
 
     double lower = std::max(s_min, s_guess-window);
     double upper = std::min(s_max, s_guess + window);

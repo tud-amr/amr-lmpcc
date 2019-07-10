@@ -1,3 +1,57 @@
+/*
+ /*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ * Copyright (c) 2019 \n
+ * TU DELFT \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * ROS stack name: arm-lmpcc
+ * \note
+ * ROS package name: lmpcc
+ *
+ * \author
+ * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
+ *         Boaz, Floor email:
+ *
+ * \date Date of creation: June, 2019
+ *
+ * \brief
+ *
+ * *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the TU Delft nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************/
+
 #ifndef LMPCC_CONTROLLER_H
 #define LMPCC_CONTROLLER_H
 
@@ -12,7 +66,6 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_listener.h>
-#include <spencer_tracking_msgs/TrackedPersons.h>
 #include <lmpcc_msgs/IntTrigger.h>
 
 // eigen includes
@@ -56,8 +109,6 @@
 // actions, srvs, msgs
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib/client/simple_action_client.h>
-#include <lmpcc/moveAction.h>
-#include <lmpcc/moveActionGoal.h>
 //#include <lmpcc/collision_avoidance.h>
 
 // joint trajectory interface
@@ -94,6 +145,11 @@
 #include <lmpcc/Clothoid.h>
 #include <static_collision_avoidance/collision_free_polygon.h>
 
+//reset msgs
+#include <std_srvs/Empty.h>
+#include <robot_localization/SetPose.h>
+#include <chrono>
+
 typedef double real_t;
 
 class LMPCC
@@ -111,7 +167,7 @@ public:
     void reconfigureCallback(lmpcc::LmpccConfig& config, uint32_t level);
 
     /**
-     * @brief MPCC: Default constructor, allocate memory
+     * @brief LMPCC: Default constructor, allocate memory
      */
     LMPCC()
     {
@@ -119,7 +175,7 @@ public:
     };
 
     /**
-     * @brief ~MPCC: Default distructor, free memory
+     * @brief ~LMPCC: Default destructor, free memory
      */
     ~LMPCC();
 
@@ -143,12 +199,6 @@ public:
      * @param obstacles: Data containing the current moving obstacle configurations
      */
     void ObstacleCallBack(const lmpcc_msgs::lmpcc_obstacle_array& received_obstacles);
-
-    /**
-     * @brief PedestrianCallBack: Get current state of moving pedestrians
-     * @param persons: Data contained in spencer_tracking_msgs/TrackedPersons
-     */
-    void PedestrianCallBack(const spencer_tracking_msgs::TrackedPersons& persons);
 
     void FreeAreaCallBack(const static_collision_avoidance::collision_free_polygon& msg);
 
@@ -188,13 +238,15 @@ public:
 
     double spline_closest_point(double s_min, double s_max, double s_guess, double window, int n_tries);
 
-    void Ref_path(std::vector<double> x,std::vector<double> y, std::vector<double> theta);
-
     void computeContourError(void);
 
-    void ConstructRefPath();
-
     void  reset_solver();
+
+    //Service clients
+    ros::ServiceClient reset_simulation_client_,reset_ekf_client_;
+    //reset simulation msg
+    std_srvs::Empty reset_msg_;
+    robot_localization::SetPose reset_pose_msg_;
 
     /** public data members */
 
@@ -232,7 +284,7 @@ public:
     double lag_error_;
     int n_search_points_;
     int n_obstacles_;
-    int traj_i;
+
     std::string cmd_topic_;
 
 	//Spline trajectory generation
@@ -242,8 +294,9 @@ public:
     double path_length_;
     std::vector<double> ss,xx,yy,vv;
 	tk::spline ref_path_x, ref_path_y;
-    std::vector<double> X_global_;
     int n_clothoid_,n_pts_;
+
+    std::chrono::steady_clock::time_point ini_t_,end_t_;
 
     //Search window parameters
     bool goal_reached_;
@@ -251,8 +304,6 @@ public:
     std::vector<double> collision_free_C1, collision_free_C2, collision_free_C3, collision_free_C4, collision_free_a1x ,collision_free_a1y, collision_free_a2x ,collision_free_a2y, collision_free_a3x ,collision_free_a3y, collision_free_a4x ,collision_free_a4y , collision_free_xmin, collision_free_xmax, collision_free_ymin, collision_free_ymax;
 
     ReferencePath referencePath;
-
-//    costmap_2d::Costmap2DROS* local_map_;
 
 private:
     ros::NodeHandle nh;
@@ -271,7 +322,7 @@ private:
 
     visualization_msgs::MarkerArray traj_marker_array_;
 
-    Eigen::Vector3d current_state_, last_state_;
+    Eigen::Vector4d current_state_, last_state_;
 
 	visualization_msgs::Marker ellips1, global_plan;
 
@@ -291,7 +342,7 @@ private:
     double slack_weight_;
     double repulsive_weight_;
 
-    double reference_velocity_;
+    double reference_velocity_,reduced_reference_velocity_;
 
     bool enable_output_;
     bool loop_mode_;
@@ -345,10 +396,6 @@ private:
 
     void publishFeedback(int& it, double& time);
 
-    /**
-     * @brief clearDataMember: clear vectors means free allocated memory
-     */
-    void clearDataMember();
 };
 
 #endif // LMPCC_CONTROLLER_H

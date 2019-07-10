@@ -44,44 +44,15 @@ parametrization:
     search_window_size: 0.2
 
 # Parameters for predefined reference path
-#global_path:
-#    x: [1.5, 3.5, 5.5, 7, 5.5, 3.5, 1.5, 0, 1.5]
-#    y: [0.5, 0.5, 0.5, 2, 3.5, 3.5, 3.5, 2, 0.5]
-#    theta: [0, 0, 0, 1.57, 3.14, 3.14, 3.14, -1.57, 0]
-#    reference_velocity: 0.5
-#global_path:
-#    x: [1.5, 3.5, 5.5, 7, 8, 10, 13, 11, 10.5, 9, 7, 5.5, 3.5, 1.5, 0, 1.5]
-#    y: [0.5, 0.5, 0.5, 2, 4, 4, 6, 7.5, 6, 4, 3.5, 3.5, 3.5, 3.5, 2, 0.5]
-#    theta: [0, 0, 0, 1.57, 0, 0, 1.57, 3.14, -1.57, 3.14, 3.14,  3.14, 3.14, 3.14, -1.57, 0]
-#    reference_velocity: 1.0
-# faculty corridor
-#global_path:
-#    x: [50, 55, 60, 65,70,80]
-#    y: [-0.5, -0.5, -0.5, -0.5,-0.5,-0.5]
-#    theta: [0,0,0,0,0,0]
-#    reference_velocity: 0.5
-# Automatic doors
-#global_path:
-#    x: [7, 13, 17, 17, 14, 10, 8,5, 2]
-#    y: [-0.5, -0.5, -0.5, 1.5, 1.5, 3, 3,3, 3]
-#    theta: [0, 0, 1.57, -3.14, -3.14, -3.14, -3.14,-3.14, -3.14]
-#    reference_velocity: 1.0
-
-#global_path:
-#    x: [1.5, 3.5, 5.5, 7, 8, 10, 13, 11, 10.5, 9, 7, 5.5, 3.5, 1.5, 0, 1.5]
-#    y: [0.5, 0.5, 0.5, 2, 4, 4, 6, 7.5, 6, 4, 3.5, 3.5, 3.5, 3.5, 2, 0.5]
-#    theta: [0, 0, 0, 1.57, 0, 0, 1.57, 3.14, -1.57, 3.14, 3.14,  3.14, 3.14, 3.14, -1.57, 0]
-#    reference_velocity: 1.0
-# faculty corridor
 global_path:
-    x: [55, 60, 65, 70,75,80]
-    y: [-0.5, -0.5, -0.5, -0.5,-0.5,-0.5]
+    x: [0,5, 10, 15,20,25]
+    y: [0, 0, 0,0,0,0]
     theta: [0,0,0,0,0,0]
     reference_velocity: 0.5
 
 # Collision avoidance parameters
 collision_avoidance:
-    n_obstacles: 2
+    n_obstacles: 4
 
 # OCP parameters
 ocp:
@@ -100,5 +71,5 @@ acado_config:
     max_num_iteration: 10
     kkt_tolerance: 1e-3
     integrator_tolerance: 1e-3
-    time_horizon: 5.0
-    discretization_intervals: 25
+    time_horizon: 3.0
+    discretization_intervals: 15

@@ -21,15 +21,13 @@
   <depend>geometry_msgs</depend>
   <depend>kdl_conversions</depend>
   <depend>kdl_parser</depend>
-  <depend>moveit_core</depend>
-  <depend>nav_msgs</depend>
   <depend>map_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>costmap_2d</depend>
   <depend>orocos_kdl</depend>
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
   <depend>sensor_msgs</depend>
-  <depend>spencer_tracking_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
   <depend>lmpcc_msgs</depend>
@@ -39,7 +37,7 @@
   <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>shape_msgs</depend>	
-  <depend>moveit_msgs</depend>
+
 
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rospy</exec_depend>

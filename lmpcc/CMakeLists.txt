@@ -10,7 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
     dynamic_reconfigure
     eigen_conversions
     geometry_msgs
-    moveit_core
     nav_msgs
     map_msgs
     roscpp
@@ -24,9 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
     urdf
     visualization_msgs
     shape_msgs
-    moveit_msgs
     lmpcc_msgs
-    spencer_tracking_msgs
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -41,13 +38,13 @@ generate_dynamic_reconfigure_options(
 )
 
 ## Generate messages in the 'action' folder
-add_action_files(
-  DIRECTORY
-    action
-  FILES
-    traj.action
-    move.action
-)
+#add_action_files(
+#  DIRECTORY
+#    action
+#  FILES
+#    traj.action
+#    move.action
+#)
 
 ## Generate services in the 'srv' folder
 #add_service_files(
@@ -67,12 +64,11 @@ generate_messages(
     map_msgs
     shape_msgs
     visualization_msgs
-    moveit_msgs
     lmpcc_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs moveit_core lmpcc_msgs
+  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs
   DEPENDS Boost
   INCLUDE_DIRS include/${PROJECT_NAME}
   LIBRARIES lmpcc_configuration lmpcc
