@@ -1,3 +1,57 @@
+/*
+ /*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ * Copyright (c) 2019 \n
+ * TU DELFT \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * ROS stack name: arm-lmpcc
+ * \note
+ * ROS package name: lmpcc
+ *
+ * \author
+ * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
+ *         Boaz, Floor email:
+ *
+ * \date Date of creation: June, 2019
+ *
+ * \brief
+ *
+ * *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the TU Delft nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************/
+
 #include <lmpcc_obstacle_feed/lmpcc_obstacle_feed_configuration.h>
 
 lmpcc_obstacle_feed_configuration::lmpcc_obstacle_feed_configuration()
@@ -72,6 +126,13 @@ bool lmpcc_obstacle_feed_configuration::initialize()
         return false;
     }
 
+    // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
+    if (!nh.getParam ("kalman", kalman_) )
+    {
+        ROS_WARN(" Parameter 'kalman' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
     /** ROS publishers and subscribers **/
     // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
     if (!nh.getParam ("publish/obstacles", pub_obstacles_) )
@@ -88,6 +149,13 @@ bool lmpcc_obstacle_feed_configuration::initialize()
     }
 
     // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
+    if (!nh.getParam ("publish/pub_people", pub_people_) )
+    {
+        ROS_WARN(" Parameter '/publish/pub_people' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
     if (!nh.getParam ("subscribe/detections", sub_detections_) )
     {
         ROS_WARN(" Parameter '/subscribe/detections' not set on %s node " , ros::this_node::getName().c_str());
@@ -95,9 +163,16 @@ bool lmpcc_obstacle_feed_configuration::initialize()
     }
 
     // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
+    if (!nh.getParam ("subscribe/pedsim", sub_pedsim_) )
+    {
+        ROS_WARN(" Parameter '/subscribe/pedsim' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
     if (!nh.getParam ("subscribe/optitrack", sub_optitrack_) )
     {
-        ROS_WARN(" Parameter '/subscribe/optitrack' not set on %s node " , ros::this_node::getName().c_str());
+        ROS_WARN(" Parameter '/subscribe/optitlmpcc_obstacle_feed_config_->rack' not set on %s node " , ros::this_node::getName().c_str());
         return false;
     }
 
@@ -117,7 +192,7 @@ bool lmpcc_obstacle_feed_configuration::initialize()
     }
 
     // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
-    if (!nh.getParam ("detected_obstacles/obstacle_threshold", obstacle_threshold_) )
+    if (!nh.getParam ("detected_obstacles/obstacle_number", obstacle_number_) )
     {
         ROS_WARN(" Parameter '/detected_obstacles/obstacle_threshold' not set on %s node " , ros::this_node::getName().c_str());
         return false;
@@ -141,24 +216,6 @@ bool lmpcc_obstacle_feed_configuration::initialize()
     if (!nh.getParam ("detected_obstacles/obstacle_size", obstacle_size_) )
     {
         ROS_WARN(" Parameter '/detected_obstacles/obstacle_size' not set on %s node " , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    if (!nh.getParam ("detected_obstacles/lambda", lambda_) )
-    {
-        ROS_WARN(" Parameter '/detected_obstacles/lambda' not set on %s node " , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    if (!nh_config.getParam ("detected_obstacles/minor_semiaxis", minor_semiaxis_) )
-    {
-        ROS_WARN(" Parameter '/detected_obstacles/minor_semiaxis not set on %s node" , ros::this_node::getName().c_str());
-        return false;
-    }
-
-    if (!nh_config.getParam ("detected_obstacles/major_semiaxis", major_semiaxis_) )
-    {
-        ROS_WARN(" Parameter '/detected_obstacles/major_semiaxis not set on %s node" , ros::this_node::getName().c_str());
         return false;
     }
 
@@ -202,6 +259,12 @@ bool lmpcc_obstacle_feed_configuration::initialize()
     if (!nh_config.getParam ("predefined_obstacles/dimensions/major_semiaxis", obst_dim_major_) )
     {
         ROS_WARN(" Parameter '/predefined_obstacles/dimensions/major_semiaxis not set on %s node" , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    if (!nh.getParam ("subscribe/prius", sub_prius_) )
+    {
+        ROS_WARN(" Parameter '/subscribe/optitrack' not set on %s node " , ros::this_node::getName().c_str());
         return false;
     }
 

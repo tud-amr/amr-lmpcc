@@ -1,3 +1,57 @@
+/*
+ /*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ * Copyright (c) 2019 \n
+ * TU DELFT \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * ROS stack name: arm-lmpcc
+ * \note
+ * ROS package name: lmpcc
+ *
+ * \author
+ * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
+ *         Boaz, Floor email:
+ *
+ * \date Date of creation: June, 2019
+ *
+ * \brief
+ *
+ * *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the TU Delft nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ******************************************************************/
+
 #include <lmpcc_obstacle_feed/lmpcc_obstacle_feed.h>
 
 ObstacleFeed::ObstacleFeed()
@@ -27,27 +81,74 @@ bool ObstacleFeed::initialize()
         /** Initialize reconfigurable parameters **/
         minV_ = lmpcc_obstacle_feed_config_->min_obstacle_volume_;
         maxV_ = lmpcc_obstacle_feed_config_->max_obstacle_volume_;
-        N_obstacles_ = lmpcc_obstacle_feed_config_->obstacle_threshold_;
+        N_obstacles_ = lmpcc_obstacle_feed_config_->obstacle_number_;
         distance_ = lmpcc_obstacle_feed_config_->distance_threshold_;
         obstacle_size_ = lmpcc_obstacle_feed_config_->obstacle_size_;
-        lambda_ = lmpcc_obstacle_feed_config_->lambda_;
 
         dt_ = lmpcc_obstacle_feed_config_->prediction_horizon_/lmpcc_obstacle_feed_config_->discretization_steps_;
 
         /** Initialize publisher of ellipsoid obstacles **/
         obstacles_pub = nh_.advertise<lmpcc_msgs::lmpcc_obstacle_array>(lmpcc_obstacle_feed_config_->pub_obstacles_,1);
+        people_pub = nh_.advertise<people_msgs::People>(lmpcc_obstacle_feed_config_->pub_people_,1);
+        people_msg_.people.resize(lmpcc_obstacle_feed_config_->obstacle_number_);
+        people_msg_.header.frame_id="map";
+
+        /** Pedstrian twist publisher **/
+        link_pubs_.resize(lmpcc_obstacle_feed_config_->obstacle_number_);
+        for (int obst_it = 1; obst_it < lmpcc_obstacle_feed_config_->obstacle_number_+1; obst_it++){
+            link_pubs_[obst_it-1] = new ros::Publisher(nh_.advertise<geometry_msgs::PoseStamped>("ped_link_"+std::to_string(obst_it),1));
+        }
 
         /** Initialize obstacle visualization **/
         if (lmpcc_obstacle_feed_config_->activate_visualization_) {
             visualize_obstacles_pub = nh_.advertise<visualization_msgs::MarkerArray>(lmpcc_obstacle_feed_config_->pub_obstacles_vis_,1);
             obst1_path_pub = nh_.advertise<nav_msgs::Path>("obst1_path",1);
             obst2_path_pub = nh_.advertise<nav_msgs::Path>("obst2_path",1);
+            obst3_path_pub = nh_.advertise<nav_msgs::Path>("obst3_path",1);
+            obst4_path_pub = nh_.advertise<nav_msgs::Path>("obst4_path",1);
         }
 
         /** Setting up dynamic_reconfigure server for the ObstacleFeedConfig parameters **/
         ros::NodeHandle nh_obstacle("lmpcc_obstacle_feed");
         reconfigure_server_.reset(new dynamic_reconfigure::Server<lmpcc_obstacle_feed::ObstacleFeedConfig>(reconfig_mutex_, nh_obstacle));
         reconfigure_server_->setCallback(boost::bind(&ObstacleFeed::reconfigureCallback,this,_1,_2));
+
+        // setting resize value
+        obstacles_.lmpcc_obstacles.resize(lmpcc_obstacle_feed_config_->obstacle_number_);  //resize according to number of obstacles
+        obstacles_.header.stamp = ros::Time::now();
+        obstacles_.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+        // resize filter
+        filters_.resize(lmpcc_obstacle_feed_config_->obstacle_number_);
+        double dt = 1/lmpcc_obstacle_feed_config_->prediction_horizon_;
+        for (int obst_it = 0; obst_it < obstacles_.lmpcc_obstacles.size(); obst_it++)
+        {
+            filters_[obst_it] =  new Obstacle_Prediction(dt,lmpcc_obstacle_feed_config_->discretization_steps_);
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.header.stamp = ros::Time::now();
+            obstacles_.lmpcc_obstacles[obst_it].trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+
+            obstacles_.lmpcc_obstacles[obst_it].pose.position.x = 1000 ;  //initializing obstacles
+            obstacles_.lmpcc_obstacles[obst_it].pose.position.y = 1000;
+            obstacles_.lmpcc_obstacles[obst_it].pose.orientation.z = 0;
+
+            obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_); //resize according to time horizon
+            obstacles_.lmpcc_obstacles[obst_it].major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+
+            obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis[0] = 0.01;
+            obstacles_.lmpcc_obstacles[obst_it].major_semiaxis[0] = 0.01;
+
+
+            for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+            {
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = 1000;
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = 1000;
+
+                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = 0;
+            }
+        }
 
         /** Initialize appropriate variables according to operation mode **/
         if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 2)
@@ -57,8 +158,8 @@ bool ObstacleFeed::initialize()
             int update_rate = lmpcc_obstacle_feed_config_->update_rate_;
 
             loop_timer = nh_.createTimer(ros::Duration((double)1/update_rate), &ObstacleFeed::updateObstacles, this);
-            //update_service = nh_.advertiseService("update_trigger", &ObstacleFeed::UpdateCallback, this);
-            //update_service_int = nh_.advertiseService("update_trigger_int", &ObstacleFeed::UpdateCallbackInt, this);
+            update_service = nh_.advertiseService("update_trigger", &ObstacleFeed::UpdateCallback, this);
+            update_service_int = nh_.advertiseService("update_trigger_int", &ObstacleFeed::UpdateCallbackInt, this);
 
             // Check predefined obstacles for errors
             if (!(lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_pose_y_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_pose_heading_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_dim_minor_.size() && lmpcc_obstacle_feed_config_->obst_pose_x_.size() == lmpcc_obstacle_feed_config_->obst_dim_major_.size()))
@@ -68,35 +169,6 @@ bool ObstacleFeed::initialize()
                 return false;
             }
 
-            obstacles_.lmpcc_obstacles.resize(lmpcc_obstacle_feed_config_->obst_pose_x_.size());
-            obstacles_.header.stamp = ros::Time::now();
-            obstacles_.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
-            for (int obst_it = 0; obst_it < obstacles_.lmpcc_obstacles.size(); obst_it++)
-            {
-                obstacles_.lmpcc_obstacles[obst_it].trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-                obstacles_.lmpcc_obstacles[obst_it].trajectory.header.stamp = ros::Time::now();
-                obstacles_.lmpcc_obstacles[obst_it].trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
-                obstacles_.lmpcc_obstacles[obst_it].pose.position.x = lmpcc_obstacle_feed_config_->obst_pose_x_.at(obst_it);
-                obstacles_.lmpcc_obstacles[obst_it].pose.position.y = lmpcc_obstacle_feed_config_->obst_pose_y_.at(obst_it);
-                obstacles_.lmpcc_obstacles[obst_it].pose.position.z = 0;
-                obstacles_.lmpcc_obstacles[obst_it].pose.orientation.z = lmpcc_obstacle_feed_config_->obst_pose_heading_.at(obst_it);
-
-                obstacles_.lmpcc_obstacles[obst_it].minor_semiaxis = lmpcc_obstacle_feed_config_->obst_dim_minor_.at(obst_it);
-                obstacles_.lmpcc_obstacles[obst_it].major_semiaxis = lmpcc_obstacle_feed_config_->obst_dim_major_.at(obst_it);
-
-                for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
-                {
-                    obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.stamp = ros::Time::now();
-                    obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-                    obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.x = obstacles_.lmpcc_obstacles[obst_it].pose.position.x + dt_*traj_it*lmpcc_obstacle_feed_config_->v_x_.at(obst_it);
-                    obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.y = obstacles_.lmpcc_obstacles[obst_it].pose.position.y + dt_*traj_it*lmpcc_obstacle_feed_config_->v_y_.at(obst_it);;
-                    obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.position.z = obstacles_.lmpcc_obstacles[obst_it].pose.position.z;
-
-                    obstacles_.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose.orientation.z = obstacles_.lmpcc_obstacles[obst_it].pose.orientation.z;
-                }
-            }
 
         }
         else if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 1)
@@ -106,16 +178,24 @@ bool ObstacleFeed::initialize()
             int update_rate = lmpcc_obstacle_feed_config_->update_rate_;
 
             optitrack_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_optitrack_, 1, &ObstacleFeed::optitrackCallback, this);
-
-            obst2_.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-            obst1_.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
         }
         else if (lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 0)
         {
             ROS_WARN("In this mode, clustered pointcloud obstacles are forwarded");
 
-            obstacles_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_detections_, 1, &ObstacleFeed::detectionsCallback, this);
-            pedestrians_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_pedestrians_, 1, &ObstacleFeed::pedestriansCallback, this);
+            obstacles_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_pedestrians_, 1, &ObstacleFeed::pedestriansCallback, this);
+        }
+        else if(lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 3)
+        {
+            ROS_WARN("In this mode, data from Prius is forwarded");
+            state_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_prius_,1, &ObstacleFeed::ObstacleStateCallback, this);
+
+        }
+        else if(lmpcc_obstacle_feed_config_->obstacle_feed_mode_ == 4)
+        {
+            ROS_WARN("In this mode, data from Pedsim is forwarded");
+            state_sub = nh_.subscribe(lmpcc_obstacle_feed_config_->sub_pedsim_,1, &ObstacleFeed::PedsimCallback, this);
+            link_state_client_ = nh_.serviceClient<gazebo_msgs::SetLinkState>("/gazebo/set_link_state");
         }
         else{
             ROS_ERROR("UNDEFINED MODE");
@@ -143,12 +223,10 @@ void ObstacleFeed::reconfigureCallback(lmpcc_obstacle_feed::ObstacleFeedConfig& 
 {
     minV_ = config.minV;
     maxV_ = config.maxV;
-    N_obstacles_ = config.N_obstacles;
-    distance_ = config.distance_threshold;
+    //N_obstacles_ = config.N_obstacles;
+    //distance_ = config.distance_threshold;
     obstacle_size_ = config.obstacle_size;
 }
-
-
 
 bool ObstacleFeed::UpdateCallbackInt(lmpcc_msgs::IntTrigger::Request& request, lmpcc_msgs::IntTrigger::Response& response)
 {
@@ -236,92 +314,29 @@ void ObstacleFeed::updateObstacles(const ros::TimerEvent& event)
 
 void ObstacleFeed::optitrackCallback(const nav_msgs::Path& predicted_path)
 {
-    //ROS_INFO_STREAM("OPTITRACK");
-    lmpcc_msgs::lmpcc_obstacle ellipse;
-    lmpcc_msgs::lmpcc_obstacle_array ellipses;
-    lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
-    //ROS_INFO_STREAM("Path poses: " << predicted_path.poses.size() << endl);
-    if (predicted_path.header.frame_id == "1"){
-        ellipse = FitEllipse(predicted_path.poses[0].pose,1);
-        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_; path_it++)
-        {
-            obst1_ = predicted_path;
 
-            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
-            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
-            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-            ellipse.trajectory.poses[path_it].pose.position.x = predicted_path.poses[path_it].pose.position.x;
-            ellipse.trajectory.poses[path_it].pose.position.y = predicted_path.poses[path_it].pose.position.y;
-            //ROS_INFO_STREAM("OPTITRACK");
-        }
-        ellipses.lmpcc_obstacles.push_back(ellipse);
-        ellipse = FitEllipse(obst2_.poses[0].pose,1);
-        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_ ; path_it++)
-        {
-            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
-            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
-            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-            ellipse.trajectory.poses[path_it].pose.position.x = obst2_.poses[path_it].pose.position.x;
-            ellipse.trajectory.poses[path_it].pose.position.y = obst2_.poses[path_it].pose.position.y;
-        }
-        ellipses.lmpcc_obstacles.push_back(ellipse);
-    }
-
-    else if  (predicted_path.header.frame_id == "2"){
-        ellipse = FitEllipse(predicted_path.poses[0].pose,1);
-        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_ ; path_it++)
-        {
-            obst2_ = predicted_path;
-            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
-            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
-            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-            ellipse.trajectory.poses[path_it].pose.position.x = predicted_path.poses[path_it].pose.position.x;
-            ellipse.trajectory.poses[path_it].pose.position.y = predicted_path.poses[path_it].pose.position.y;
-        }
-        ellipses.lmpcc_obstacles.push_back(ellipse);
-        ellipse = FitEllipse(obst1_.poses[0].pose,1);
-        for (int path_it = 0; path_it < lmpcc_obstacle_feed_config_->discretization_steps_ ; path_it++)
-        {
-            ellipse.trajectory.poses[path_it].header.stamp = ros::Time::now();
-            ellipse.trajectory.poses[path_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
-            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-            ellipse.trajectory.poses[path_it].pose.position.x = obst1_.poses[path_it].pose.position.x;
-            ellipse.trajectory.poses[path_it].pose.position.y = obst1_.poses[path_it].pose.position.y;
-        }
-        ellipses.lmpcc_obstacles.push_back(ellipse);
-    }
-
-    //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");
-
-    for (int ellipses_it = 0; ellipses_it < ellipses.lmpcc_obstacles.size(); ellipses_it++)
-    {
-
-        ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
-
-        transformPose("map_mocap",lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].pose);
-
-        QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].pose);
-        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
-        {
-            //ROS_INFO_STREAM("ZRotToQuat");
-            ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
-            //ROS_INFO_STREAM("transformPose");
-            transformPose("map_mocap",lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
-            //ROS_INFO_STREAM("QuatToZRot");
-            QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
-        }
-        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
-    }
-
-    //ROS_INFO_STREAM("Publish and visualize obstacles");
-    if(local_ellipses.lmpcc_obstacles.size()>0){
-        publishObstacles(local_ellipses);
-        visualizeObstacles(local_ellipses);
-    }
+//    if (predicted_path.header.frame_id == "1"){
+//
+//        for (int path_it = 0; path_it < ACADO_N ; path_it++)
+//        {
+//            obst1_x[path_it] = predicted_path.poses[path_it].pose.position.x + 1.55;
+//            obst1_y[path_it] = predicted_path.poses[path_it].pose.position.y + 2.75;
+//        }
+//    }
+//    else if  (predicted_path.header.frame_id == "2"){
+//
+//        for (int path_it = 0; path_it < ACADO_N ; path_it++)
+//        {
+//            obst2_x[path_it] = predicted_path.poses[path_it].pose.position.x + 1.55;
+//            obst2_y[path_it] = predicted_path.poses[path_it].pose.position.y + 2.75;
+//        }
+//
+//    }else if  (predicted_path.header.frame_id == "3"){
+//
+//    }
+//    else {
+//        ROS_INFO_STREAM("Obstacle id not recognized");
+//    }
 }
 
 void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objects)
@@ -383,100 +398,212 @@ void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objec
 
 }
 
-void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person)
+void ObstacleFeed::PedsimCallback(const pedsim_msgs::TrackedPersons& person)
 {
-    //ROS_INFO_STREAM("Pedestrian callback!");
+    //ROS_INFO_STREAM("PEDSIM callback!");
 
-    std::vector<uint32_t> objectIDs;
+    double Xp, Yp;
+    double q1, q2, q3, q4;
+    double mag_q, distance;
+    float major_semiaxis, minor_semiaxis, z_rotation;
+    std::vector<uint32_t> objectIds;
     std::vector<double> objectDistances;
-    double distance, volume;
-
-    vision_msgs::Detection3DArray local_objects;
+    lmpcc_msgs::lmpcc_obstacle_array filter_obstacles;
+    lmpcc_msgs::lmpcc_obstacle obst;
+    lmpcc_msgs::lmpcc_obstacle obst1;
+    lmpcc_msgs::lmpcc_obstacle_array local_obstacles;
     lmpcc_msgs::lmpcc_obstacle_array ellipses;
     lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
     lmpcc_msgs::lmpcc_obstacle ellipse;
-    vision_msgs::Detection3D ped;
+    double f = lmpcc_obstacle_feed_config_->prediction_horizon_/lmpcc_obstacle_feed_config_->discretization_steps_;
+    geometry_msgs::PoseStamped test;
+
+    //resize the vectors
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    // hard code to link gazebo peds with pedsim
+    /*test.pose = person.tracks[0].pose.pose;
+    test.header.frame_id = "ped_link_"+std::to_string(1);
+    ped_pub_.publish(test);
+    test.pose = person.tracks[1].pose.pose;
+    test.header.frame_id = "ped_link_"+std::to_string(2);
+    ped_pub2_.publish(test);
+    test.pose = person.tracks[2].pose.pose;
+    test.header.frame_id = "ped_link_"+std::to_string(3);
+    ped_pub3_.publish(test);
+    test.pose = person.tracks[3].pose.pose;
+    test.header.frame_id = "ped_link_"+std::to_string(4);
+    ped_pub4_.publish(test);
+     */
+    /*gazebo_msgs::SetLinkState link;
+    link.request.link_state.link_name="ped_link_1";
+    link.request.link_state.pose = person.tracks[0].pose.pose;
+    //link.request.link_state.reference_frame = "odom";
+    link_state_client_.call(link);
 
-    for (int object_it = 0; object_it < person.tracks.size(); object_it++)
-    {
-//        // SHIFTING ALL OBSTACLES IN SPACE
-//        objectArray_.objects[object_it].pose.position.y = objectArray_.objects[object_it].pose.position.y + 2;
-        Eigen::VectorXd robot_pose;
-        getTransform("odom","base_link" ,robot_pose);
-        //ROS_INFO_STREAM("-- Compute distance of obstacle to robot: " );
-        distance = sqrt(pow(person.tracks[object_it].pose.pose.position.x-robot_pose(0),2) + pow(person.tracks[object_it].pose.pose.position.y-robot_pose(1),2));
-        ped.bbox.center.position.x = person.tracks[object_it].pose.pose.position.x;
-        ped.bbox.center.position.y = person.tracks[object_it].pose.pose.position.y;
-        ped.bbox.center.orientation.x = person.tracks[object_it].pose.pose.orientation.x;
-        ped.bbox.center.orientation.y = person.tracks[object_it].pose.pose.orientation.y;
-        ped.bbox.center.orientation.z = person.tracks[object_it].pose.pose.orientation.z;
-        ped.bbox.center.orientation.w = person.tracks[object_it].pose.pose.orientation.w;
-         //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
+    link.request.link_state.link_name="ped_link_2";
+    link.request.link_state.pose = person.tracks[1].pose.pose;
+    link_state_client_.call(link);
+    */
+    //link_state_pub_.publish(link);
+    // hard code to link gazebo peds with pedsim
+    for(int person_it=0;person_it<person.tracks.size();person_it++) { // iterates over obstacles
 
-        // If distance is smaller than defined bound, add to obstacles
-        if (distance < distance_ ){
-            local_objects.detections.push_back(ped);
-            objectDistances.push_back(distance);
-            //ROS_INFO_STREAM("-- Received # pedestrians: " << person.tracks.size());
+        obst.pose=person.tracks[person_it].pose.pose;
+        obst.id = person.tracks[person_it].track_id;
+        obst.velocity=person.tracks[person_it].twist.twist;
+        test.pose = person.tracks[person_it].pose.pose;
+        test.header.frame_id = "ped_link_"+std::to_string(person_it+1);
+        link_pubs_[person_it]->publish(test);
+
+        people_msg_.header.stamp=ros::Time::now();
+        people_msg_.people[person_it].name="ped_link_"+std::to_string(person_it+1);
+        people_msg_.people[person_it].position.x=person.tracks[person_it].pose.pose.position.x;
+        people_msg_.people[person_it].position.y=person.tracks[person_it].pose.pose.position.y;
+        people_msg_.people[person_it].position.z=0;
+        people_msg_.people[person_it].velocity.x=person.tracks[person_it].twist.twist.linear.x;
+        people_msg_.people[person_it].velocity.y=person.tracks[person_it].twist.twist.linear.y;
+        people_msg_.people[person_it].reliability=1.0;
+        people_pub.publish(people_msg_);
+        //ensure magnitude of quaternion is one
+        q1 = obst.pose.orientation.x;
+        q2 = obst.pose.orientation.y;
+        q3 = obst.pose.orientation.z;
+        q4 = obst.pose.orientation.w;
+        mag_q = sqrt((q1 * q1) + (q2 * q2) + (q3 * q3) + (q4 * q4));
+
+        if (mag_q != 1) {
+
+            //ROS_WARN("Quaternion magnitude not equal to one, making required modifications");
+            obst.pose.orientation.x = 0;
+            obst.pose.orientation.y = 0;
+            obst.pose.orientation.z = 0;
+            obst.pose.orientation.w = 1;
+
         }
+
+        //getting the major and minor semi axis values
+        obst.minor_semiaxis[0]= lmpcc_obstacle_feed_config_->obst_dim_major_[0];
+        obst.major_semiaxis[0]= lmpcc_obstacle_feed_config_->obst_dim_minor_[0];
+        obst.trajectory.poses[0].pose = obst.pose;
+        if(!lmpcc_obstacle_feed_config_->kalman_){
+            for(int i = 1; i < lmpcc_obstacle_feed_config_->discretization_steps_; i++){
+                obst.trajectory.poses[i].pose.position.x = obst.trajectory.poses[i-1].pose.position.x+person.tracks[person_it].twist.twist.linear.x*f;
+                obst.trajectory.poses[i].pose.position.y = obst.trajectory.poses[i-1].pose.position.y+person.tracks[person_it].twist.twist.linear.y*f;
+                obst.trajectory.poses[i].pose.orientation = obst.trajectory.poses[i-1].pose.orientation;
+                obst.minor_semiaxis[i] = obst.minor_semiaxis[0];
+                obst.major_semiaxis[i] = obst.major_semiaxis[0];
+            }
+        }
+        else{
+            obst.trajectory = filters_[person_it]->updateFilter(obst.trajectory.poses[0].pose);
+        }
+
+        local_obstacles.lmpcc_obstacles.push_back(obst);
     }
 
-    //ROS_INFO_STREAM("For all obstacles, fit an ellipse");
 
-    for (int local_obst_it = 0; local_obst_it < local_objects.detections.size(); local_obst_it++)
-    {
-        //ROS_INFO_STREAM("FitElting lipse");
-        ellipse = FitEllipse(local_objects.detections[local_obst_it],objectDistances[local_obst_it]);
+    for(int i = 0; i< local_obstacles.lmpcc_obstacles.size(); i++) {
 
-        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
-        {
+        // transform the pose to base_link in order to calculate the distance to the obstacle
+        transformPose(person.header.frame_id, "base_link", local_obstacles.lmpcc_obstacles[i].pose);
+        //transformTwist(person.header.frame_id, "base_link", local_obstacles.lmpcc_obstacles[i].velocity);
+        //get obstacle coordinates in base_link frame
+        Xp = local_obstacles.lmpcc_obstacles[i].pose.position.x;
+        Yp = local_obstacles.lmpcc_obstacles[i].pose.position.y;
+
+        //distance between the Prius and the obstacle
+        distance = sqrt(pow(Xp, 2) + pow(Yp, 2));
+
+        //ROS_WARN_STREAM("distance to obstacle: " << distance);
+
+        //transform the pose back to planning_frame for further calculations
+        transformPose("base_link", lmpcc_obstacle_feed_config_->planning_frame_,
+                      local_obstacles.lmpcc_obstacles[i].pose);
+
+
+        //get the bounding box pose measurements for the obstacle
+        obst1.id = local_obstacles.lmpcc_obstacles[i].id;
+        obst1.pose = local_obstacles.lmpcc_obstacles[i].pose;
+        obst1.velocity = local_obstacles.lmpcc_obstacles[i].velocity;
+        //get the major and minor semi axis readings of the stored obstacles
+        for(int j=0; j< obst1.major_semiaxis.size(); j++){
+
+            obst1.major_semiaxis[j] = local_obstacles.lmpcc_obstacles[i].major_semiaxis[j];
+            obst1.minor_semiaxis[j] = local_obstacles.lmpcc_obstacles[i].minor_semiaxis[j];
+
+        }
+
+        //get the trajectory pose readings of the stored obstacles
+        for(int k=0; k< lmpcc_obstacle_feed_config_->discretization_steps_; k++){
+
+            obst1.trajectory.poses[k].pose = local_obstacles.lmpcc_obstacles[i].trajectory.poses[k].pose;
+            //obst1.trajectory.poses[k].pose.position.y = local_obstacles.lmpcc_obstacles[i].trajectory.poses[k].pose.position.y;
+            //transform the pose back to planning_frame for further calculations
+            if(person.header.frame_id!=lmpcc_obstacle_feed_config_->planning_frame_)
+                transformPose(person.header.frame_id, lmpcc_obstacle_feed_config_->planning_frame_,obst1.trajectory.poses[k].pose);
+
+        }
+
+        //filter out the obstacles that are farther away than the threshold distance value
+        if (distance < distance_) {
+
+            filter_obstacles.lmpcc_obstacles.push_back(obst1);
+            objectDistances.push_back(distance);
+
+        }
+
+    }
+
+    //fit the ellipse to the obstacles
+    for(int filt_obst_it = 0; filt_obst_it < filter_obstacles.lmpcc_obstacles.size(); filt_obst_it ++) {
+
+        //fitting the ellipse
+        ellipse = FitEllipse(filter_obstacles.lmpcc_obstacles[filt_obst_it], objectDistances[filt_obst_it]);
+        ellipse.id = filter_obstacles.lmpcc_obstacles[filt_obst_it].id;
+        //estimating the ellipse trajectory over the defined horizon
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++) {
             ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
             ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-
             ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
-            ellipse.trajectory.poses[traj_it].pose.position.x = ellipse.pose.position.x + dt_*traj_it*person.tracks[local_obst_it].twist.twist.linear.x;
-            ellipse.trajectory.poses[traj_it].pose.position.y = ellipse.pose.position.y + dt_*traj_it*person.tracks[local_obst_it].twist.twist.linear.y;
-
+            ellipse.trajectory.poses[traj_it].pose = filter_obstacles.lmpcc_obstacles[filt_obst_it].trajectory.poses[traj_it].pose;
         }
 
+        //store the calculated ellipse
         ellipses.lmpcc_obstacles.push_back(ellipse);
-        //ROS_INFO_STREAM("-- Received # 5: " << person.tracks.size());
+
     }
 
-    //ROS_INFO_STREAM("Order obstacles according to distance");
+    //order the stored ellipses with the closest one being first
     OrderObstacles(ellipses);
 
-    local_ellipses.lmpcc_obstacles.clear();
-
-    //ROS_INFO_STREAM("Transform and add to local obstacles upto a defined bound");
+    //find the minimum out of the number of detected obstacles and the default number of eligible obstacles to implement the algorithm
     int n = std::min(int(ellipses.lmpcc_obstacles.size()),N_obstacles_);
-    for (int ellipses_it = 0; ellipses_it < n; ellipses_it++)
-    {
+    //ROS_INFO_STREAM("Publish and visualize obstacles: " << n);
+    // store the ordered ellipses in a vector local_ellipses
+    for (int ellipses_it = 0; ellipses_it < n; ellipses_it++) {
 
-        ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].pose);
-
-        transformPose(lmpcc_obstacle_feed_config_->robot_frame_,lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].pose);
-
-        QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].pose);
-        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
-        {
-            //ROS_INFO_STREAM("ZRotToQuat");
-            ZRotToQuat(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
-            //ROS_INFO_STREAM("transformPose");
-            transformPose(lmpcc_obstacle_feed_config_->robot_frame_,lmpcc_obstacle_feed_config_->planning_frame_,ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
-            //ROS_INFO_STREAM("QuatToZRot");
-            QuatToZRot(ellipses.lmpcc_obstacles[ellipses_it].trajectory.poses[traj_it].pose);
-        }
         local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
     }
 
+    //if the number of detected obstacle is less than the default number, randomly initialize the remaining number of required obstacles
     for (int ellipses_it = n; ellipses_it < N_obstacles_ ; ellipses_it++)
     {
         ellipse.pose.position.x = 1000;
         ellipse.pose.position.y = 1000;
+        ellipse.id=0;
+        ellipse.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+        ellipse.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
         for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
         {
+            ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
             ellipse.trajectory.poses[traj_it].pose.position.x = 1000;
             ellipse.trajectory.poses[traj_it].pose.position.y = 1000;
         }
@@ -484,15 +611,197 @@ void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPerso
         local_ellipses.lmpcc_obstacles.push_back(ellipse);
     }
 
-    //ROS_INFO_STREAM("Publish and visualize obstacles" << n);
+
+    //publish and visualize the detected obstacles
+
     if(local_ellipses.lmpcc_obstacles.size()>0){
+
         publishObstacles(local_ellipses);
         visualizeObstacles(local_ellipses);
+
     }
-//    && local_obst_it < lmpcc_obstacle_feed_config_->obstacle_threshold_
-//    ROS_INFO_STREAM("Received array of " << objectArray.objects.size() << " objects");
-//    ROS_INFO_STREAM("Stored " << objectIDs.size() << " object identities");
-//    ROS_INFO_STREAM("Stored " << ellipses.lmpcc_obstacles.size() << " object identities");
+}
+
+void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person)
+{
+    //ROS_INFO_STREAM("Pedestrian callback!");F
+
+    double Xp, Yp;
+    double q1, q2, q3, q4;
+    double mag_q, distance;
+    float major_semiaxis, minor_semiaxis, z_rotation;
+    std::vector<uint32_t> objectIds;
+    std::vector<double> objectDistances;
+    lmpcc_msgs::lmpcc_obstacle_array filter_obstacles;
+    lmpcc_msgs::lmpcc_obstacle obst;
+    lmpcc_msgs::lmpcc_obstacle obst1;
+    lmpcc_msgs::lmpcc_obstacle_array local_obstacles;
+    lmpcc_msgs::lmpcc_obstacle_array ellipses;
+    lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
+    lmpcc_msgs::lmpcc_obstacle ellipse;
+    double f = lmpcc_obstacle_feed_config_->prediction_horizon_/lmpcc_obstacle_feed_config_->discretization_steps_;
+
+    //resize the vectors
+    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+
+    for(int person_it=0;person_it<person.tracks.size();person_it++) { // iterates over obstacles
+
+        obst.pose=person.tracks[person_it].pose.pose;
+
+        //ensure magnitude of quaternion is one
+        q1 = obst.pose.orientation.x;
+        q2 = obst.pose.orientation.y;
+        q3 = obst.pose.orientation.z;
+        q4 = obst.pose.orientation.w;
+        mag_q = sqrt((q1 * q1) + (q2 * q2) + (q3 * q3) + (q4 * q4));
+
+        if (mag_q != 1) {
+
+            //ROS_WARN("Quaternion magnitude not equal to one, making required modifications");
+            obst.pose.orientation.x = 0;
+            obst.pose.orientation.y = 0;
+            obst.pose.orientation.z = 0;
+            obst.pose.orientation.w = 1;
+
+        }
+
+        //getting the major and minor semi axis values
+        obst.minor_semiaxis[0]= lmpcc_obstacle_feed_config_->obst_dim_major_[0];
+        obst.major_semiaxis[0]= lmpcc_obstacle_feed_config_->obst_dim_minor_[0];
+        obst.trajectory.poses[0].pose = obst.pose;
+        if(!lmpcc_obstacle_feed_config_->kalman_){
+            for(int i = 1; i < lmpcc_obstacle_feed_config_->discretization_steps_; i++){
+                obst.trajectory.poses[i].pose.position.x = obst.trajectory.poses[i-1].pose.position.x+person.tracks[person_it].twist.twist.linear.x*f;
+                obst.trajectory.poses[i].pose.position.y = obst.trajectory.poses[i-1].pose.position.y+person.tracks[person_it].twist.twist.linear.y*f;
+                obst.trajectory.poses[i].pose.orientation = obst.trajectory.poses[i-1].pose.orientation;
+                obst.minor_semiaxis[i] = obst.minor_semiaxis[0];
+                obst.major_semiaxis[i] = obst.major_semiaxis[0];
+            }
+        }
+        else{
+            obst.trajectory = filters_[person_it]->updateFilter(obst.trajectory.poses[0].pose);
+        }
+
+        local_obstacles.lmpcc_obstacles.push_back(obst);
+    }
+
+
+    for(int i = 0; i< local_obstacles.lmpcc_obstacles.size(); i++) {
+
+        // transform the pose to base_link in order to calculate the distance to the obstacle
+        transformPose(person.header.frame_id, "base_link", local_obstacles.lmpcc_obstacles[i].pose);
+
+        //get obstacle coordinates in base_link frame
+        Xp = local_obstacles.lmpcc_obstacles[i].pose.position.x;
+        Yp = local_obstacles.lmpcc_obstacles[i].pose.position.y;
+
+        //distance between the Prius and the obstacle
+        distance = sqrt(pow(Xp, 2) + pow(Yp, 2));
+
+        //ROS_WARN_STREAM("distance to obstacle: " << distance);
+
+        //transform the pose back to planning_frame for further calculations
+        transformPose("base_link", lmpcc_obstacle_feed_config_->planning_frame_,
+                      local_obstacles.lmpcc_obstacles[i].pose);
+
+
+        //get the bounding box pose measurements for the obstacle
+        obst1.pose = local_obstacles.lmpcc_obstacles[i].pose;
+        //get the major and minor semi axis readings of the stored obstacles
+        for(int j=0; j< obst1.major_semiaxis.size(); j++){
+
+            obst1.major_semiaxis[j] = local_obstacles.lmpcc_obstacles[i].major_semiaxis[j];
+            obst1.minor_semiaxis[j] = local_obstacles.lmpcc_obstacles[i].minor_semiaxis[j];
+
+        }
+
+        //get the trajectory pose readings of the stored obstacles
+        for(int k=0; k< lmpcc_obstacle_feed_config_->discretization_steps_; k++){
+
+            obst1.trajectory.poses[k].pose = local_obstacles.lmpcc_obstacles[i].trajectory.poses[k].pose;
+            //obst1.trajectory.poses[k].pose.position.y = local_obstacles.lmpcc_obstacles[i].trajectory.poses[k].pose.position.y;
+            //transform the pose back to planning_frame for further calculations
+            if(person.header.frame_id!=lmpcc_obstacle_feed_config_->planning_frame_)
+                transformPose(person.header.frame_id, lmpcc_obstacle_feed_config_->planning_frame_,obst1.trajectory.poses[k].pose);
+
+        }
+
+        //filter out the obstacles that are farther away than the threshold distance value
+        if (distance < distance_) {
+
+            filter_obstacles.lmpcc_obstacles.push_back(obst1);
+            objectDistances.push_back(distance);
+
+        }
+
+    }
+
+    //fit the ellipse to the obstacles
+    for(int filt_obst_it = 0; filt_obst_it < filter_obstacles.lmpcc_obstacles.size(); filt_obst_it ++) {
+
+        //fitting the ellipse
+        ellipse = FitEllipse(filter_obstacles.lmpcc_obstacles[filt_obst_it], objectDistances[filt_obst_it]);
+
+        //estimating the ellipse trajectory over the defined horizon
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++) {
+            ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[traj_it].pose = filter_obstacles.lmpcc_obstacles[filt_obst_it].trajectory.poses[traj_it].pose;
+        }
+
+        //store the calculated ellipse
+        ellipses.lmpcc_obstacles.push_back(ellipse);
+
+    }
+
+    //order the stored ellipses with the closest one being first
+    OrderObstacles(ellipses);
+
+    //find the minimum out of the number of detected obstacles and the default number of eligible obstacles to implement the algorithm
+    int n = std::min(int(ellipses.lmpcc_obstacles.size()),N_obstacles_);
+    //ROS_INFO_STREAM("Publish and visualize obstacles: " << n);
+    // store the ordered ellipses in a vector local_ellipses
+    for (int ellipses_it = 0; ellipses_it < n; ellipses_it++) {
+
+        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
+    }
+
+    //if the number of detected obstacle is less than the default number, randomly initialize the remaining number of required obstacles
+    for (int ellipses_it = n; ellipses_it < N_obstacles_ ; ellipses_it++)
+    {
+        ellipse.pose.position.x = 1000;
+        ellipse.pose.position.y = 1000;
+        ellipse.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+        ellipse.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[traj_it].pose.position.x = 1000;
+            ellipse.trajectory.poses[traj_it].pose.position.y = 1000;
+        }
+
+        local_ellipses.lmpcc_obstacles.push_back(ellipse);
+
+    }
+
+
+    //publish and visualize the detected obstacles
+
+    if(local_ellipses.lmpcc_obstacles.size()>0){
+
+        publishObstacles(local_ellipses);
+        visualizeObstacles(local_ellipses);
+
+    }
 }
 
 void ObstacleFeed::publishObstacles(const lmpcc_msgs::lmpcc_obstacle_array& obstacles)
@@ -514,18 +823,25 @@ void ObstacleFeed::visualizeObstacles(const lmpcc_msgs::lmpcc_obstacle_array& ob
         marker.id = obst_it*100;                                    // Obstacle ID
         marker.type = visualization_msgs::Marker::CYLINDER;
         marker.pose = obstacles.lmpcc_obstacles[obst_it].pose;
-        ZRotToQuat(marker.pose);                                // Get Quaternion rotation
-        marker.scale.x = 2*obstacles.lmpcc_obstacles[obst_it].major_semiaxis;     // Marker is specified by diameter, not radius!
-        marker.scale.y = 2*obstacles.lmpcc_obstacles[obst_it].minor_semiaxis;
+        ZRotToQuat(marker.pose);
+        // Get Quaternion rotation
+        marker.scale.x = 2*obstacles.lmpcc_obstacles[obst_it].major_semiaxis[0];     // Marker is specified by diameter, not radius!
+        marker.scale.y = 2*obstacles.lmpcc_obstacles[obst_it].minor_semiaxis[0];
         marker.scale.z = 0.01;
         marker.color.a = 1.0;
         marker.color.r = 0.0;
         marker.color.g = 1.0;
         marker.color.b = 0.0;
         markerArray.markers.push_back(marker);
+        marker.color.a = 0.2;
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
         for (int traj_it = 0; traj_it < obstacles.lmpcc_obstacles[obst_it].trajectory.poses.size(); traj_it++) {
             marker.id = obst_it * 100 + traj_it;                                    // Obstacle ID
             marker.pose = obstacles.lmpcc_obstacles[obst_it].trajectory.poses[traj_it].pose;
+	    marker.scale.x = 2*obstacles.lmpcc_obstacles[obst_it].major_semiaxis[traj_it];     // Marker is specified by diameter, not radius!
+            marker.scale.y = 2*obstacles.lmpcc_obstacles[obst_it].minor_semiaxis[traj_it];
             markerArray.markers.push_back(marker);
         }
     }
@@ -563,27 +879,41 @@ void ObstacleFeed::OrderObstacles(lmpcc_msgs::lmpcc_obstacle_array& ellipses)
 //    std::cout << '\n';
 }
 
+lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const lmpcc_msgs::lmpcc_obstacle& object, const double& distance)
+{
+    //ROS_INFO_STREAM("FitEllipse");
+    lmpcc_msgs::lmpcc_obstacle ellipse;
+    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    ellipse.major_semiaxis.resize(object.major_semiaxis.size());
+    ellipse.minor_semiaxis.resize(object.minor_semiaxis.size());
+    for(int k=0; k< object.major_semiaxis.size(); k++){
+        ellipse.major_semiaxis[k] = object.major_semiaxis[k];
+        ellipse.minor_semiaxis[k] = object.minor_semiaxis[k];
+    }
+    //for(int k=0; k< object.minor_semiaxis.size(); k++){
+    //    ellipse.minor_semiaxis[k] = object.minor_semiaxis[k];
+    //}
+    //ellipse.major_semiaxis[0] = majoraxis;
+    //ellipse.minor_semiaxis[0] = minoraxis;
+
+    ellipse.distance = distance;
+    ellipse.pose = object.pose;
+    ellipse.velocity = object.velocity;
+    return ellipse;
+}
+
 lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const vision_msgs::Detection3D& object, const double& distance)
 {
     //ROS_INFO_STREAM("FitEllipse");
     lmpcc_msgs::lmpcc_obstacle ellipse;
     ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->major_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->minor_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    ellipse.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    ellipse.major_semiaxis[0] = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+    ellipse.minor_semiaxis[0] = obstacle_size_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
+
     ellipse.distance = distance;
     ellipse.pose = object.bbox.center;
-    return ellipse;
-}
-
-lmpcc_msgs::lmpcc_obstacle ObstacleFeed::FitEllipse(const geometry_msgs::Pose& object, const double& distance)
-{
-    //ROS_INFO_STREAM("FitEllipse");
-    lmpcc_msgs::lmpcc_obstacle ellipse;
-    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
-    ellipse.major_semiaxis = lmpcc_obstacle_feed_config_->major_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.minor_semiaxis = lmpcc_obstacle_feed_config_->minor_semiaxis_ + lambda_; // sqrt(pow(object.dimensions.x,2) + pow(object.dimensions.y,2))/2;
-    ellipse.distance = distance;
-    ellipse.pose = object;
     return ellipse;
 }
 
@@ -602,6 +932,46 @@ void ObstacleFeed::ZRotToQuat(geometry_msgs::Pose& pose)
     pose.orientation.x = 0;
     pose.orientation.y = 0;
     pose.orientation.z = sin(pose.orientation.z * 0.5);
+}
+
+bool ObstacleFeed::transformTwist(const std::string& from, const std::string& to, geometry_msgs::Twist& twist)
+{
+    bool transform = false;
+    tf::StampedTransform stamped_tf;
+
+    geometry_msgs::PoseStamped stampedPose_in, stampedPose_out;
+
+    stampedPose_in.pose.position.x = twist.linear.x;
+    stampedPose_in.pose.position.y = twist.linear.y;
+//    stampedPose_in.header.stamp = ros::Time::now();
+    stampedPose_in.header.frame_id = from;
+
+    // make sure source and target frame exist
+    if (tf_listener_.frameExists(to) && tf_listener_.frameExists(from))
+    {
+        try
+        {
+            // find transforamtion between souce and target frame
+            tf_listener_.waitForTransform(from, to, ros::Time(0), ros::Duration(0.01));
+            tf_listener_.transformPose(to, stampedPose_in, stampedPose_out);
+
+            transform = true;
+        }
+        catch (tf::TransformException& ex)
+        {
+            ROS_ERROR("MPCC::getTransform: %s", ex.what());
+        }
+    }
+
+    else
+    {
+        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",from.c_str(), to.c_str());
+    }
+
+    twist.linear.x = stampedPose_out.pose.position.x;
+    twist.linear.y = stampedPose_out.pose.position.y;
+
+    return transform;
 }
 
 bool ObstacleFeed::transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose)
@@ -669,24 +1039,24 @@ bool ObstacleFeed::getTransform(const std::string& from, const std::string& to, 
                                                     stamped_tf.getRotation().getW()
             );
 
-            //if (lmpcc_obstacle_feed_config_->activate_debug_output_)
-            //{
-                //std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
-                                   // << "qy:" << stamped_tf.getRotation().getY()
-                                   // << "qz:" << stamped_tf.getRotation().getZ()
-                                   // << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
-            //}
+            if (lmpcc_obstacle_feed_config_->activate_debug_output_)
+            {
+                std::cout << "\033[94m" << "getTransform:" << " qx:" << stamped_tf.getRotation().getX()
+                                    << "qy:" << stamped_tf.getRotation().getY()
+                                    << "qz:" << stamped_tf.getRotation().getZ()
+                                    << "qw:" << stamped_tf.getRotation().getW() << "\033[0m" <<std::endl;
+            }
 
             tf::Matrix3x3 quat_matrix(quat);
             quat_matrix.getRPY(stamped_pose(3), stamped_pose(4), stamped_pose(5));
 
-            //if (lmpcc_obstacle_feed_config_->activate_debug_output_)
-            //{
-                //std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
-                  //                  << " pitch:" << stamped_pose(4)
-                  //                  << " yaw:" << stamped_pose(5)
-                   //                 << "\033[0m" <<std::endl;
-            //}
+            if (lmpcc_obstacle_feed_config_->activate_debug_output_)
+            {
+                std::cout << "\033[32m" << "getTransform:" << " roll:" << stamped_pose(3)
+                                    << " pitch:" << stamped_pose(4)
+                                    << " yaw:" << stamped_pose(5)
+                                    << "\033[0m" <<std::endl;
+            }
 
             transform = true;
         }
@@ -698,9 +1068,221 @@ bool ObstacleFeed::getTransform(const std::string& from, const std::string& to, 
 
     else
     {
-        //ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
-        //                 from.c_str(), to.c_str());
+        ROS_WARN("MPCC::getTransform: '%s' or '%s' frame doesn't exist, pass existing frame",
+                         from.c_str(), to.c_str());
     }
 
     return transform;
+}
+void ObstacleFeed::ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects)
+{
+    double Xp, Yp;
+    double q1, q2, q3, q4;
+    double mag_q, distance;
+    float major_semiaxis, minor_semiaxis, z_rotation;
+    std::vector<uint32_t> objectIds;
+    std::vector<double> objectDistances;
+    lmpcc_msgs::lmpcc_obstacle_array filter_obstacles;
+    lmpcc_msgs::lmpcc_obstacle obst;
+    lmpcc_msgs::lmpcc_obstacle obst1;
+    lmpcc_msgs::lmpcc_obstacle_array local_obstacles;
+    lmpcc_msgs::lmpcc_obstacle_array ellipses;
+    lmpcc_msgs::lmpcc_obstacle_array local_ellipses;
+    lmpcc_msgs::lmpcc_obstacle ellipse;
+
+    //resize the vectors
+    ellipse.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+    obst1.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+
+    for(int i=0;i<objects.tracks.size();i++) { // iterates over obstacles
+
+        cv_msgs::PredictedMoGTrack track = objects.tracks[i];
+
+        for (int j = 0; j < std::min(int(track.track.size()), lmpcc_obstacle_feed_config_->discretization_steps_) ; j++) { // prediction length
+
+            cv_msgs::PredictedMoG mog = track.track[j];
+
+            for (int k = 0; k < mog.pose.size(); k++) {
+
+                obst.trajectory.poses[j].pose = mog.pose[k].pose;
+
+                //ensure magnitude of quaternion is one
+                q1 = obst.trajectory.poses[j].pose.orientation.x;
+                q2 = obst.trajectory.poses[j].pose.orientation.y;
+                q3 = obst.trajectory.poses[j].pose.orientation.z;
+                q4 = obst.trajectory.poses[j].pose.orientation.w;
+                mag_q = sqrt((q1 * q1) + (q2 * q2) + (q3 * q3) + (q4 * q4));
+
+                if (mag_q != 1) {
+
+                    ROS_WARN("Quaternion magnitude not equal to one, making required modifications");
+                    obst.trajectory.poses[j].pose.orientation.x = 0;
+                    obst.trajectory.poses[j].pose.orientation.y = 0;
+                    obst.trajectory.poses[j].pose.orientation.z = 0;
+                    obst.trajectory.poses[j].pose.orientation.w = 1;
+
+                }
+
+                //getting the major and minor semi axis values
+                Eigen::Matrix3f m;
+                auto covariance = mog.pose[k].covariance;
+                m << covariance[0], covariance[1], covariance[2],
+                        covariance[6], covariance[7], covariance[8],
+                        covariance[12], covariance[13], covariance[13];
+                Eigen::JacobiSVD<Eigen::Matrix3f> svd(m, Eigen::ComputeFullV | Eigen::ComputeFullU);
+                auto euler_rotations = svd.matrixU().eulerAngles(0, 1, 2);
+                z_rotation = euler_rotations(2);
+                major_semiaxis = sqrt(svd.singularValues()(0));
+                minor_semiaxis = sqrt(svd.singularValues()(1));
+
+            }
+
+            obst.minor_semiaxis[j]= minor_semiaxis;
+            obst.major_semiaxis[j]= major_semiaxis;
+
+        }
+
+        //check if the number of readings received is equal to the threshold, else take necessary action
+        if(track.track.size() < lmpcc_obstacle_feed_config_->discretization_steps_){
+
+            ROS_WARN("Number of readings received, less than the required threshold.");
+            ROS_WARN("Assigning the last received reading to the remainder of the deficit.");
+
+            for(int i = track.track.size(); i < lmpcc_obstacle_feed_config_->discretization_steps_; i++){
+                obst.trajectory.poses[i].pose = obst.trajectory.poses[track.track.size()-1].pose;
+                obst.minor_semiaxis[i] = obst.minor_semiaxis[track.track.size()-1];
+                obst.major_semiaxis[i] = obst.major_semiaxis[track.track.size()-1];
+            }
+
+        }
+
+        if(track.track.size() > lmpcc_obstacle_feed_config_->discretization_steps_){
+
+            ROS_WARN("size of readings greater than the default prediction horizon, extra readings will be cropped");
+
+        }
+
+        obst.pose = obst.trajectory.poses[0].pose;
+        local_obstacles.lmpcc_obstacles.push_back(obst);
+    }
+
+
+    for(int i = 0; i< local_obstacles.lmpcc_obstacles.size(); i++) {
+
+        // transform the pose to base_link in order to calculate the distance to the obstacle
+        transformPose(objects.header.frame_id, "base_link", local_obstacles.lmpcc_obstacles[i].pose);
+
+        //get obstacle coordinates in base_link frame
+        Xp = local_obstacles.lmpcc_obstacles[i].pose.position.x;
+        Yp = local_obstacles.lmpcc_obstacles[i].pose.position.y;
+
+        //distance between the Prius and the obstacle
+        distance = sqrt(pow(Xp, 2) + pow(Yp, 2));
+
+        ROS_WARN_STREAM("distance to obstacle: " << distance);
+
+        //transform the pose back to planning_frame for further calculations
+        transformPose("base_link", lmpcc_obstacle_feed_config_->planning_frame_,
+                      local_obstacles.lmpcc_obstacles[i].pose);
+
+
+        //get the bounding box pose measurements for the obstacle
+        obst1.pose = local_obstacles.lmpcc_obstacles[i].pose;
+
+        //get the major and minor semi axis readings of the stored obstacles
+        for(int j=0; j< obst1.major_semiaxis.size(); j++){
+
+            obst1.major_semiaxis[j] = local_obstacles.lmpcc_obstacles[i].major_semiaxis[j];
+            obst1.minor_semiaxis[j] = local_obstacles.lmpcc_obstacles[i].minor_semiaxis[j];
+
+        }
+
+        //get the trajectory pose readings of the stored obstacles
+        for(int k=0; k< local_obstacles.lmpcc_obstacles[i].trajectory.poses.size(); k++){
+
+            obst1.trajectory.poses[k].pose = local_obstacles.lmpcc_obstacles[i].trajectory.poses[k].pose;
+            //obst1.trajectory.poses[k].pose.position.y = local_obstacles.lmpcc_obstacles[i].trajectory.poses[k].pose.position.y;
+	    //transform the pose back to planning_frame for further calculations
+            transformPose(objects.header.frame_id, lmpcc_obstacle_feed_config_->planning_frame_,obst1.trajectory.poses[k].pose);
+
+        }
+
+        //filter out the obstacles that are farther away than the threshold distance value
+        if (distance < distance_) {
+
+            filter_obstacles.lmpcc_obstacles.push_back(obst1);
+            objectDistances.push_back(distance);
+
+        }
+
+    }
+
+    //fit the ellipse to the obstacles
+    for(int filt_obst_it = 0; filt_obst_it < filter_obstacles.lmpcc_obstacles.size(); filt_obst_it ++) {
+
+        //fitting the ellipse
+        ellipse = FitEllipse(filter_obstacles.lmpcc_obstacles[filt_obst_it], objectDistances[filt_obst_it]);
+
+        filter_obstacles.lmpcc_obstacles[filt_obst_it].trajectory.poses.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+
+        //estimating the ellipse trajectory over the defined horizon
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++) {
+            ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[traj_it].pose = filter_obstacles.lmpcc_obstacles[filt_obst_it].trajectory.poses[traj_it].pose;
+
+        }
+
+        //store the calculated ellipse
+        ellipses.lmpcc_obstacles.push_back(ellipse);
+
+    }
+
+    //order the stored ellipses with the closest one being first
+    OrderObstacles(ellipses);
+
+    //find the minimum out of the number of detected obstacles and the default number of eligible obstacles to implement the algorithm
+    int n = std::min(int(ellipses.lmpcc_obstacles.size()),N_obstacles_);
+
+    // store the ordered ellipses in a vector local_ellipses
+    for (int ellipses_it = 0; ellipses_it < n; ellipses_it++) {
+
+        local_ellipses.lmpcc_obstacles.push_back(ellipses.lmpcc_obstacles[ellipses_it]);
+    }
+
+    //if the number of detected obstacle is less than the default number, randomly initialize the remaining number of required obstacles
+    for (int ellipses_it = n; ellipses_it < N_obstacles_ ; ellipses_it++)
+    {
+        ellipse.pose.position.x = 1000;
+        ellipse.pose.position.y = 1000;
+        ellipse.minor_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+        ellipse.major_semiaxis.resize(lmpcc_obstacle_feed_config_->discretization_steps_);
+        for (int traj_it = 0; traj_it < lmpcc_obstacle_feed_config_->discretization_steps_; traj_it++)
+        {
+            ellipse.trajectory.poses[traj_it].header.stamp = ros::Time::now();
+            ellipse.trajectory.poses[traj_it].header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.header.frame_id = lmpcc_obstacle_feed_config_->planning_frame_;
+            ellipse.trajectory.poses[traj_it].pose.position.x = 1000;
+            ellipse.trajectory.poses[traj_it].pose.position.y = 1000;
+        }
+
+        local_ellipses.lmpcc_obstacles.push_back(ellipse);
+
+    }
+
+
+    //publish and visualize the detected obstacles
+    ROS_INFO_STREAM("Publish and visualize obstacles: " << n);
+    if(local_ellipses.lmpcc_obstacles.size()>0){
+
+        publishObstacles(local_ellipses);
+        visualizeObstacles(local_ellipses);
+
+    }
 }
