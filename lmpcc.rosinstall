@@ -1,0 +1,4 @@
+- git:
+    uri: 'https://github.com/.git'
+    local-name: package_name
+    version: indigo_dev

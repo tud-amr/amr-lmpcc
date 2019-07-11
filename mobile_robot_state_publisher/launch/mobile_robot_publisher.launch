@@ -3,7 +3,7 @@
 
     <!--Publish the mobile robot pose -->
     <node name="mobile_robot_state_publisher" pkg="mobile_robot_state_publisher" type="mobile_robot_state_publisher_node" respawn="false" output="screen">
-            <rosparam command="load" file="$(arg config)/config/prius.yaml" />
+            <rosparam command="load" file="$(arg config)/config/jackal.yaml" />
     </node>
 
 </launch>

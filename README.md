@@ -38,5 +38,38 @@ The authors would like to thank Wilko Schwarting for sharing its Matlab implemen
   publisher={Institute of Electrical and Electronics Engineers (IEEE)}
 }
 ```
+## Software Requirements
+* ROS installation
+* Ubuntu
+* Pedestrian Simulator: pedsim_ros: https://github.com/bbrito/pedsim_ros
+    * Branch: four_persons
 
-# Instalation instructions
+## Instalation instructions
+This set of instructions were only tested for Ubuntu16 with ROS-Kinetic. Additionally, we assume that you already have a complete ROS installation.
+* Install Jackal Software Packages
+    sudo apt-get install ros-kinetic-jackal-control ros-kinetic-jackal-gazebo ros-kinetic-jackal-simulator ros-kinetic-jackal-description ros-kinetic-jackal-desktop ros-kinetic-jackal-navigation ros-kinetic-jackal-viz
+* Install Pedestrian Simulator
+    Follow instruction from the website: https://github.com/bbrito/pedsim_ros
+
+
+## Running LMPCC
+* Simulation Environment
+
+        1. Start Jackal Gazebo Simulation
+            * roslaunch jackal_gazebo jackal_world.launch
+        2. Start Pedestrian Simulator
+            * roslaunch pedsim_simulator corridor.launch
+* Start lmpcc_obstacle_feed
+
+        1. roslaunch lmpcc_obstacle_feed lmpcc_obstacle_feed.launch
+
+*Start lmpcc controller
+
+        1. roslaunch lmpcc lmpcc.launch
+
+* Start rqt_reconfigure
+
+        1. rosrun rqt_reconfigure rqt_reconfigure
+        2. Click on the lmpcc parameters to start planning by pressing the plan button
+        3. Click on the ledsim_simulator_parameters to start the simulation
+        4. Click on the lmpcc parameters to start the robot motion by pressin the enable_output button
