@@ -3,18 +3,11 @@
   <name>static_collision_avoidance</name>
   <version>0.0.0</version>
   <description>The static_collision_avoidance package</description>
-
-  <!-- One maintainer tag required, multiple allowed, one person per tag -->
-  <!-- Example:  -->
-  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="bdebrito@todo.todo">bdebrito</maintainer>
-
-
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
-
+  <maintainer email="bruno.debrito@tudelft.nl">Bruno Brito</maintainer>
+  <maintainer email="boazfloor@gmail.com">Boaz Floor</maintainer>
+  <author email="bruno.debrito@tudelf.nl">Bruno Brito</author>
+  <author email="boazfloor@gmail.com">Boaz Floor</author>
+  <license>GNU</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roslint</build_depend>

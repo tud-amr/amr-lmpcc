@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     map_msgs
     roscpp
     roslint
+    static_collision_avoidance
     sensor_msgs
     std_msgs
     std_srvs
@@ -68,7 +69,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs
+  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs static_collision_avoidance
   DEPENDS Boost
   INCLUDE_DIRS include/${PROJECT_NAME}
   LIBRARIES lmpcc_configuration lmpcc

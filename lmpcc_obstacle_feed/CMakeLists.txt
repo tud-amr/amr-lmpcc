@@ -26,7 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
   vision_msgs
   lmpcc_msgs
   spencer_tracking_msgs
-  cv_msgs
   pedsim_msgs
 )
 

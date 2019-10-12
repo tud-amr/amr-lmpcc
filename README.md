@@ -1,8 +1,8 @@
-# Local Model Predictive Contouring Control for Dynamic Environments
+# Model Predictive Contouring Control for Collision Avoidance in Unstructured Dynamic Environments
 
 This repository contains the code for the paper:
 
-**<a href="https://arxiv.org/abs/1803.10892">Local Model Predictive Contouring Control for Dynamic Environments</a>**
+**<a href="https://ieeexplore.ieee.org/document/8768044">Model Predictive Contouring Control for Collision Avoidance in Unstructured Dynamic Environments</a>**
 <br>
 <a href="http://www.tudelft.nl/staff/bruno.debrito/">Bruno Brito</a>,
 <a href="">Boaz Floor</a>,
@@ -16,7 +16,7 @@ contouring control (MPCC) and extend it to incorporate a static map by computing
 Our framework is agnostic to the robot model. We present experimental results with a mobile robot navigating in indoor environments populated with humans. Our method is executed fully onboard without the need of external support and can be applied to other robot morphologies such as autonomous cars.
 
 <div align='center'>
-<img src="images/paper.png"></img>
+<a href="https://ieeexplore.ieee.org/document/8768044"><img src="images/paper.png"></img>
 </div>
 
 If you find this code useful in your research then please cite:
@@ -46,10 +46,20 @@ The authors would like to thank Wilko Schwarting for sharing its Matlab implemen
 
 ## Instalation instructions
 This set of instructions were only tested for Ubuntu16 with ROS-Kinetic. Additionally, we assume that you already have a complete ROS installation.
-* Install Jackal Software Packages
-    sudo apt-get install ros-kinetic-jackal-control ros-kinetic-jackal-gazebo ros-kinetic-jackal-simulator ros-kinetic-jackal-description ros-kinetic-jackal-desktop ros-kinetic-jackal-navigation ros-kinetic-jackal-viz
-* Install Pedestrian Simulator
-    Follow instruction from the website: https://github.com/bbrito/pedsim_ros
+* Please follow the following instructions:
+```
+sudo apt-get install ros-kinetic-jackal-control ros-kinetic-jackal-gazebo ros-kinetic-jackal-simulator ros-kinetic-jackal-description ros-kinetic-jackal-desktop ros-kinetic-jackal-navigation ros-kinetic-jackal-viz
+sudo apt install ros-kinetic-people-msgs
+cd [workspace]/src
+git clone https://github.com/bbrito/pedsim_ros.git -b four_persons
+git clone https://github.com/spencer-project/spencer_messages.git
+git clone https://github.com/srl-freiburg/spencer_tracking_rviz_plugin.git
+git clone https://github.com/bbrito/amr-lmpcc.git
+cc ../
+rosdep install --from-paths src --ignore-src -r -y
+catkin_make
+source devel/setup.bash
+```
 
 
 ## Running LMPCC
@@ -70,6 +80,12 @@ This set of instructions were only tested for Ubuntu16 with ROS-Kinetic. Additio
 * Start rqt_reconfigure
 
         1. rosrun rqt_reconfigure rqt_reconfigure
-        2. Click on the lmpcc parameters to start planning by pressing the plan button
-        3. Click on the ledsim_simulator_parameters to start the simulation
-        4. Click on the lmpcc parameters to start the robot motion by pressin the enable_output button
+        2. Click on the lmpcc parameters to start the robot motion by press the enable_output button
+        3. Click on the lmpcc parameters to start planning by pressing the plan button
+
+## Troubleshooting
+* If you get the following error:
+```
+lmpcc_controller.h:146:63: fatal error: static_collision_avoidance/collision_free_polygon.h: No such file or directory
+```
+Try to compile again using catkin_make several times. Sometimes catkin fails to compile the diferent packages in the right order.

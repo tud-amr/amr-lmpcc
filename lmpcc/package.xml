@@ -3,9 +3,11 @@
   <name>lmpcc</name>
   <version>0.6.14</version>
   <description>The lmpcc package</description>
-
+  <maintainer email="bruno.debrito@tudelft.nl">Bruno Brito</maintainer>
   <maintainer email="boazfloor@gmail.com">Boaz Floor</maintainer>
-  <license>MIT</license>
+  <author email="bruno.debrito@tudelf.nl">Bruno Brito</author>
+  <author email="boazfloor@gmail.com">Boaz Floor</author>
+  <license>GNU</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roslint</build_depend>
@@ -27,6 +29,7 @@
   <depend>orocos_kdl</depend>
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
+  <depend>static_collision_avoidance</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>

@@ -36,7 +36,6 @@
   <build_depend>jsk_recognition_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>lmpcc_msgs</build_depend>
-  <build_depend>cv_msgs</build_depend>
   <build_depend>pedsim_msgs</build_depend>
   <build_depend>people_msgs</build_depend>
   <build_export_depend>actionlib</build_export_depend>
@@ -57,7 +56,6 @@
   <build_export_depend>jsk_recognition_msgs</build_export_depend>
   <build_export_depend>visualization_msgs</build_export_depend>
   <build_export_depend>lmpcc_msgs</build_export_depend>
-  <build_export_depend>cv_msgs</build_export_depend>
   <build_export_depend>pedsim_msgs</build_export_depend>
 
   <exec_depend>actionlib</exec_depend>

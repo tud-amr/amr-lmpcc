@@ -91,7 +91,6 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <spencer_tracking_msgs/TrackedPersons.h>
 #include <pedsim_msgs/TrackedPersons.h>
-#include <cv_msgs/PredictedMoGTracks.h>
 
 // filter
 #include <lmpcc_obstacle_feed/obstacle_prediction.h>
@@ -173,7 +172,6 @@ private:
     bool getTransform(const std::string& from, const std::string& to, Eigen::VectorXd& transform);
     bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
     bool transformTwist(const std::string& from, const std::string& to, geometry_msgs::Twist& twist);
-    void ObstacleStateCallback(const cv_msgs::PredictedMoGTracks& objects);
 
 };
 
