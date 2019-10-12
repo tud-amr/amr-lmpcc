@@ -16,7 +16,7 @@ contouring control (MPCC) and extend it to incorporate a static map by computing
 Our framework is agnostic to the robot model. We present experimental results with a mobile robot navigating in indoor environments populated with humans. Our method is executed fully onboard without the need of external support and can be applied to other robot morphologies such as autonomous cars.
 
 <div align='center'>
-<a href="https://ieeexplore.ieee.org/document/8768044"><img src="images/paper.png"></img>
+<a href="https://youtu.be/2ulhqQIXFqQ"><img src="images/paper.png"></img>
 </div>
 
 If you find this code useful in your research then please cite:
