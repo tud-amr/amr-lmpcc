@@ -165,8 +165,7 @@ add_executable(amr_lmpcc
     lmpcc/include/lmpcc/lmpcc_configuration.h
     lmpcc/include/lmpcc/lmpcc_controller.h
     lmpcc/include/lmpcc/reference_path.h
-    lmpcc/include/lmpcc/static_environment.h
-    lmpcc/include/tkspline/spline.h
+        lmpcc/include/tkspline/spline.h
     lmpcc/launch/lmpcc.launch
     lmpcc/launch/robot_lmpcc.launch
     lmpcc/qpoases/INCLUDE/EXTRAS/SolutionAnalysis.hpp
@@ -214,8 +213,7 @@ add_executable(amr_lmpcc
     lmpcc/src/lmpcc_node.cpp
     lmpcc/src/reference_path.cpp
     lmpcc/src/spline.cpp
-    lmpcc/src/static_environment.cpp
-    lmpcc/CMakeLists.txt
+        lmpcc/CMakeLists.txt
     lmpcc/FindACADO.cmake
     lmpcc/package.xml
     lmpcc/README.md
@@ -271,7 +269,6 @@ add_executable(amr_lmpcc
     lmpcc_obstacle_feed/CMakeLists.txt
     lmpcc_obstacle_feed/package.xml
     mobile_robot_state_publisher/config/jackal.yaml
-    mobile_robot_state_publisher/config/prius.yaml
     mobile_robot_state_publisher/include/mobile_robot_state_publisher/mobile_robot_state_publisher.h
     mobile_robot_state_publisher/launch/mobile_robot_publisher.launch
     mobile_robot_state_publisher/src/mobile_robot_state_publisher_node.cpp

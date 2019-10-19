@@ -25,15 +25,12 @@
  *
  ****************************************************************/
 
-
-#ifndef PROJECT_MOBILE_ROBOT_STATE_PUBLISHER_H
-#define PROJECT_MOBILE_ROBOT_STATE_PUBLISHER_H
+#pragme once
 
 #include <ros/ros.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
-
 
 class MobileRobotStatePublisher
 {
@@ -60,5 +57,3 @@ class MobileRobotStatePublisher
 	bool initialize();
 
 };
-
-#endif //PROJECT_MOBILE_ROBOT_STATE_PUBLISHER_H

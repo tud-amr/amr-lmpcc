@@ -15,8 +15,8 @@
  * ROS package name: lmpcc
  *
  * \author
- * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
- *          Boaz, Floor email:
+ * Authors: Bruno Brito email: bruno.debrito@tudelft.nl
+ *          Boaz, Floor email: boazfloor@gmail.com
  *
  * \date Date of creation: June, 2019
  *

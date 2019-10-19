@@ -16,7 +16,7 @@
  *
  * \author
  * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
- *         Boaz, Floor email:
+ *          Boaz, Floor email: boazfloor@gmail.com
  *
  * \date Date of creation: June, 2019
  *
@@ -52,8 +52,7 @@
  *
  ******************************************************************/
 
-#ifndef LMPCC_CONTROLLER_H
-#define LMPCC_CONTROLLER_H
+#pragma once
 
 // ros includes
 #include <pluginlib/class_loader.h>
@@ -306,6 +305,51 @@ public:
     ReferencePath referencePath;
 
 private:
+    /**
+     * @brief spinNode: spin node means ROS is still running
+     */
+    void spinNode();
+
+    void computeEgoDiscs();
+
+    /**
+     * @brief controlLoop: Continue updating this function depend on controller frequency
+     * @param event: Used for computation of duration of first and last event
+     */
+    void controlLoop(const ros::TimerEvent& event);
+
+    /**
+     * @brief publishZeroJointVelocity: published zero joint velocity is statisfied cartesian distance
+     */
+    void publishZeroJointVelocity();
+
+    void publishTrajectory(void);
+
+	/**
+	 * @brief publishPredictedTrajectory: publish predicted trajectory
+	 */
+	void publishPredictedTrajectory(void);
+
+	void publishGlobalPlan(void);
+
+	void publishLocalRefPath(void);
+
+	void publishPredictedOutput(void);
+
+	void publishPredictedCollisionSpace(void);
+
+	void publishCost(void);
+
+    void publishContourError(void);
+
+	void broadcastTF();
+
+	void broadcastPathPose();
+
+    void ZRotToQuat(geometry_msgs::Pose& pose);
+
+    void publishFeedback(int& it, double& time);
+
     ros::NodeHandle nh;
 
     tf::TransformListener tf_listener_;
@@ -324,7 +368,7 @@ private:
 
     Eigen::Vector4d current_state_, last_state_;
 
-	visualization_msgs::Marker ellips1, global_plan;
+    visualization_msgs::Marker ellips1, global_plan;
 
     // Obstacles
     lmpcc_msgs::lmpcc_obstacle_array obstacles_;
@@ -351,51 +395,4 @@ private:
     int n_traj_per_cloth;
     double window_size_;
 
-    /**
-     * @brief spinNode: spin node means ROS is still running
-     */
-    void spinNode();
-
-    void computeEgoDiscs();
-    /**
-     * @brief controlLoop: Continue updating this function depend on controller frequency
-     * @param event: Used for computation of duration of first and last event
-     */
-    void controlLoop(const ros::TimerEvent& event);
-
-    /**
-     * @brief publishZeroJointVelocity: published zero joint velocity is statisfied cartesian distance
-     */
-    void publishZeroJointVelocity();
-
-    void publishTrajectory(void);
-	/**
-	 * @brief publishPredictedTrajectory: publish predicted trajectory
-	 */
-	void publishPredictedTrajectory(void);
-
-	void publishGlobalPlan(void);
-
-	void publishLocalRefPath(void);
-
-	void publishPredictedOutput(void);
-
-	void publishPredictedCollisionSpace(void);
-
-	void publishCost(void);
-
-    void publishContourError(void);
-
-//    void publishPathFromTrajectory(const moveit_msgs::RobotTrajectory& traj);
-
-	void broadcastTF();
-
-	void broadcastPathPose();
-
-    void ZRotToQuat(geometry_msgs::Pose& pose);
-
-    void publishFeedback(int& it, double& time);
-
 };
-
-#endif // LMPCC_CONTROLLER_H

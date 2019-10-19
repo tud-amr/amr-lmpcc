@@ -52,8 +52,7 @@
  *
  ******************************************************************/
 
-#ifndef LMPCC_OBSTACLE_FEED_H
-#define LMPCC_OBSTACLE_FEED_H
+#pragma once
 
 #include <ros/ros.h>
 #include <std_msgs/Header.h>
@@ -174,5 +173,3 @@ private:
     bool transformTwist(const std::string& from, const std::string& to, geometry_msgs::Twist& twist);
 
 };
-
-#endif // LMPCC_OBSTACLE_FEED_H

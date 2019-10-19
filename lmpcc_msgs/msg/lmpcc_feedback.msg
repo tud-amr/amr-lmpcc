@@ -67,7 +67,6 @@ float64 obsth_5
 float64 obsta_5
 float64 obstb_5
 
-
 float64[] robot_state
 
 std_msgs/Float64MultiArray contour_errors
