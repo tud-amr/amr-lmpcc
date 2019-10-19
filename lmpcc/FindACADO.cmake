@@ -99,7 +99,7 @@ SET( ACADO_BUILD_STATIC ${ACADO_STATIC_LIBS_FOUND} )
 IF( VERBOSE )
 	MESSAGE( STATUS "Static libraries: ${ACADO_STATIC_LIBRARIES}\n" )
 ENDIF()
-
+q
 #
 # Shared libs
 #

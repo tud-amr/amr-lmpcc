@@ -2,8 +2,7 @@
 // Created by hai on 22/4/19.
 //
 
-#ifndef OBSTACLE_ESTIMATOR_OBSTACLE_PREDICTION_H
-#define OBSTACLE_ESTIMATOR_OBSTACLE_PREDICTION_H
+#pragma once
 
 // General include
 #include <math.h>
@@ -71,7 +70,3 @@ private:
 
 
 };
-
-
-
-#endif //OBSTACLE_ESTIMATOR_OBSTACLE_FILTER_H

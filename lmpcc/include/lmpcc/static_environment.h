@@ -2,8 +2,7 @@
 // Created by boaz on 10-10-18.
 //
 
-#ifndef PROJECT_STATICENVIRONMENT_H
-#define PROJECT_STATICENVIRONMENT_H
+#pragma once
 
 // std includes
 #include <iostream>
@@ -40,5 +39,3 @@ public:
 
     ComputeCollisionFreeArea();
 };
-
-#endif //PROJECT_STATICENVIRONMENT_H

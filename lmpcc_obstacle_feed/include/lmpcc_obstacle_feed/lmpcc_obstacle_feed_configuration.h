@@ -52,8 +52,7 @@
  *
  ******************************************************************/
 
-#ifndef LMPCC_OBSTACLE_FEED_CONFIGURATION_H
-#define LMPCC_OBSTACLE_FEED_CONFIGURATION_H
+#pragma once
 
 #include <ros/ros.h>
 
@@ -122,5 +121,3 @@ private:
     void print_configuration_parameter();
 
 };
-
-#endif //LMPCC_OBSTACLE_FEED_CONFIGURATION_H

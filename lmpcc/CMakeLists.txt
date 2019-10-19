@@ -38,22 +38,6 @@ generate_dynamic_reconfigure_options(
         cfg/Lmpcc.cfg
 )
 
-## Generate messages in the 'action' folder
-#add_action_files(
-#  DIRECTORY
-#    action
-#  FILES
-#    traj.action
-#    move.action
-#)
-
-## Generate services in the 'srv' folder
-#add_service_files(
-#  DIRECTORY
-#     srv
-#  FILES
-#)
-
 # Generate added messages and services with any dependencies listed here
 generate_messages(
     DEPENDENCIES

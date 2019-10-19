@@ -41,6 +41,16 @@ vel = sqrt(pow(msg.twist.twist.linear.x,2)+pow(msg.twist.twist.linear.y,2));
 
 }
 
+double QuatToJointAngle(const geometry_msgs::TransformStamped transformStamped)
+{
+    const double ysqr = transformStamped.transform.rotation.y * transformStamped.transform.rotation.y;
+    const double t3 = +2.0 * (transformStamped.transform.rotation.w * transformStamped.transform.rotation.z
+                 + transformStamped.transform.rotation.x * transformStamped.transform.rotation.y);
+    const double t4 = +1.0 - 2.0 * (ysqr + transformStamped.transform.rotation.z * transformStamped.transform.rotation.z);
+
+    return atan2(t3, t4);
+};
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "mobile_robot_state_publisher_node");
@@ -107,14 +117,9 @@ int main(int argc, char **argv)
 			ros::Duration(1.0).sleep();
 			continue;
 		}
-		//CONVERT FROM QUATERNION TO JOINT ANGLE ROTATION
 
-		ysqr = transformStamped.transform.rotation.y * transformStamped.transform.rotation.y;
-		t3 = +2.0 * (transformStamped.transform.rotation.w * transformStamped.transform.rotation.z
-					 + transformStamped.transform.rotation.x * transformStamped.transform.rotation.y);
-		t4 = +1.0 - 2.0 * (ysqr + transformStamped.transform.rotation.z * transformStamped.transform.rotation.z);
+		pose_msg.orientation.z = QuatToJointAngle(transformStamped);
 
-		pose_msg.orientation.z = atan2(t3, t4);
 		pose_msg.position.x = transformStamped.transform.translation.x;
 		pose_msg.position.y = transformStamped.transform.translation.y;
 		pose_msg.position.z = vel;

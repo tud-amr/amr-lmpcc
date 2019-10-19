@@ -271,8 +271,7 @@ add_executable(amr_lmpcc
     lmpcc_obstacle_feed/CMakeLists.txt
     lmpcc_obstacle_feed/package.xml
     mobile_robot_state_publisher/config/jackal.yaml
-    mobile_robot_state_publisher/config/prius.yaml
-    mobile_robot_state_publisher/include/mobile_robot_state_publisher/mobile_robot_state_publisher.h
+        mobile_robot_state_publisher/include/mobile_robot_state_publisher/mobile_robot_state_publisher.h
     mobile_robot_state_publisher/launch/mobile_robot_publisher.launch
     mobile_robot_state_publisher/src/mobile_robot_state_publisher_node.cpp
     mobile_robot_state_publisher/CMakeLists.txt

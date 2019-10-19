@@ -16,7 +16,7 @@
  *
  * \author
  * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
- *          Boaz, Floor email:
+ *          Boaz, Floor email: boazfloor@gmail.com
  *
  * \date Date of creation: June, 2019
  *
@@ -52,8 +52,7 @@
  *
  ******************************************************************/
 
-#ifndef PROJECT_REFERENCE_PATH_H
-#define PROJECT_REFERENCE_PATH_H
+#pragma once
 
 // std includes
 #include <iostream>
@@ -208,8 +207,5 @@ public:
     * @brief PrintGlobalPath: This function prints the global path in the terminal
     */
     void PrintGlobalPath();
-
-
 };
 
-#endif //PROJECT_REFERENCE_PATH_H
