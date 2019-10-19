@@ -16,7 +16,7 @@
  *
  * \author
  * Authors: Bruno Brito   email: bruno.debrito@tudelft.nl
- *          Boaz, Floor email:
+ *          Boaz, Floor   email: boazfloor@gmail.com
  *
  * \date Date of creation: June, 2019
  *
