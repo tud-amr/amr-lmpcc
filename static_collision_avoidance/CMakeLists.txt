@@ -6,28 +6,15 @@ add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
-        actionlib
-        actionlib_msgs
         cmake_modules
-        control_msgs
         dynamic_reconfigure
-        eigen_conversions
         geometry_msgs
-        moveit_core
         nav_msgs
         map_msgs
         roscpp
-        roslint
         sensor_msgs
         std_msgs
-        std_srvs
-        tf
-        tf_conversions
-        trajectory_msgs
-        urdf
-        visualization_msgs
-        shape_msgs
-        spencer_tracking_msgs
+        visulalization_msgs
         message_generation
         )
 
@@ -47,7 +34,7 @@ generate_messages(
 )
 
 catkin_package(
-        CATKIN_DEPENDS message_runtime actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs 
+        CATKIN_DEPENDS message_runtime dynamic_reconfigure geometry_msgs nav_msgs roscpp sensor_msgs std_msgs visualization_msgs 
         DEPENDS Boost
         INCLUDE_DIRS include/${PROJECT_NAME}
         LIBRARIES
