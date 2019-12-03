@@ -56,7 +56,7 @@ cd [workspace]/src
 git clone https://github.com/bbrito/pedsim_ros.git -b four_persons
 git clone https://github.com/spencer-project/spencer_messages.git
 git clone https://github.com/srl-freiburg/spencer_tracking_rviz_plugin.git
-git clone https://github.com/bbrito/amr-lmpcc.git
+git clone https://github.com/tud-amr/amr-lmpcc.git
 cc ../
 rosdep install --from-paths src --ignore-src -r -y
 catkin_make
