@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
         roscpp
         sensor_msgs
         std_msgs
-        visulalization_msgs
+        visualization_msgs
         message_generation
         )
 
