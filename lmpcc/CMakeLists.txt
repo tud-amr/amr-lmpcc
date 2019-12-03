@@ -65,6 +65,7 @@ include_directories(include
     ${EIGEN_INCLUDE_DIRS}
     include/${PROJECT_NAME}
     include/${PROJECT_NAME}/ocp
+    ../static_collision_avoidance/include
     qpoases/include
     qpoases/src
     )
