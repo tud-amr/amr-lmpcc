@@ -142,7 +142,7 @@
 //splines
 #include <tkspline/spline.h>
 #include <lmpcc/Clothoid.h>
-#include <static_collision_avoidance/static_environment.h>
+#include <static_collision_avoidance/collision_free_polygon.h>
 
 //reset msgs
 #include <std_srvs/Empty.h>
