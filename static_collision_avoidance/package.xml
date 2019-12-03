@@ -34,14 +34,12 @@
   <depend>spencer_tracking_msgs</depend>
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
-  <depend>lmpcc_msgs</depend>
   <depend>tf</depend>
   <depend>tf_conversions</depend>
   <depend>trajectory_msgs</depend>
   <depend>urdf</depend>
   <depend>visualization_msgs</depend>
   <depend>shape_msgs</depend>
-  <depend>moveit_msgs</depend>
 
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rospy</exec_depend>
