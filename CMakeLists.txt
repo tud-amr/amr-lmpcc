@@ -154,6 +154,15 @@ add_executable(amr_lmpcc
     jackal_simulator/jackal_simulator/CMakeLists.txt
     jackal_simulator/jackal_simulator/package.xml
     jackal_simulator/rosinstall
+    static_collision_avoidance/config/local_map_params.yaml
+    static_collision_avoidance/config/static_avoidance_config.yaml
+    static_collision_avoidance/include/static_collision_avoidance/static_environment.h
+    static_collision_avoidance/src/static_collision_avoidance_node.cpp 
+    static_collision_avoidance/src/static_environment.cpp
+    static_collision_avoidance/launch/static_collision_avoidance.launch
+    static_collision_avoidance/msg/collision_free_polygon.msg
+    static_collision_avoidance/CMakeLists.txt
+    static_collision_avoidance/package.xml
     lmpcc/action/move.action
     lmpcc/action/traj.action
     lmpcc/cfg/Lmpcc.cfg
@@ -275,15 +284,6 @@ add_executable(amr_lmpcc
     mobile_robot_state_publisher/src/mobile_robot_state_publisher_node.cpp
     mobile_robot_state_publisher/CMakeLists.txt
     mobile_robot_state_publisher/package.xml
-    static_collision_avoidance/config/local_map_params.yaml
-    static_collision_avoidance/config/static_avoidance_config.yaml
-    static_collision_avoidance/include/static_collision_avoidance/static_environment.h
-    static_collision_avoidance/src/static_collision_avoidance_node.cpp 
-    static_collision_avoidance/src/static_environment.cpp
-    static_collision_avoidance/launch/static_collision_avoidance.launch
-    static_collision_avoidance/msg/collision_free_polygon.msg
-    static_collision_avoidance/CMakeLists.txt
-    static_collision_avoidance/package.xml
     vision_msgs/include/vision_msgs/create_aabb.h
     vision_msgs/msg/BoundingBox2D.msg
     vision_msgs/msg/BoundingBox3D.msg
