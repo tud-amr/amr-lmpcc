@@ -25,7 +25,6 @@ find_package(catkin REQUIRED COMPONENTS
     visualization_msgs
     shape_msgs
     lmpcc_msgs
-    message_generation
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -40,27 +39,22 @@ generate_dynamic_reconfigure_options(
 )
 
 # Generate added messages and services with any dependencies listed here
-add_action_files(
-  DIRECTORY action
-  FILES move.action traj.action
-)
-
-generate_messages(
-    DEPENDENCIES
-    actionlib_msgs
-    geometry_msgs
-    sensor_msgs
-    std_msgs
-    nav_msgs
-    map_msgs
-    shape_msgs
-    visualization_msgs
-    lmpcc_msgs
-    static_collision_avoidance
-)
+#generate_messages(
+#    DEPENDENCIES
+#    actionlib_msgs
+#    geometry_msgs
+#    sensor_msgs
+#    std_msgs
+#    nav_msgs
+#    map_msgs
+#    shape_msgs
+#    visualization_msgs
+#    lmpcc_msgs
+#    static_collision_avoidance
+#)
 
 catkin_package(
-  CATKIN_DEPENDS message_runtime actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs static_collision_avoidance
+  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs static_collision_avoidance
   DEPENDS Boost
   INCLUDE_DIRS include/${PROJECT_NAME}
   LIBRARIES lmpcc_configuration lmpcc
