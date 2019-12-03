@@ -50,6 +50,7 @@ generate_messages(
     shape_msgs
     visualization_msgs
     lmpcc_msgs
+    static_collision_avoidance
 )
 
 catkin_package(
