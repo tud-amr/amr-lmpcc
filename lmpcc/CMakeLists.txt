@@ -99,6 +99,8 @@ add_library(lmpcc
         src/ocp/acado_solver.c
         src/ocp/acado_auxiliary_functions.c)
 
+add_dependencies(lmpcc ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 target_include_directories(lmpcc PUBLIC
         qpoases
         qpoases/INCLUDE
