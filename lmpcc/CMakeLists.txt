@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
     visualization_msgs
     shape_msgs
     lmpcc_msgs
+    message_generation
 )
 
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -54,7 +55,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs static_collision_avoidance
+  CATKIN_DEPENDS message_runtime actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs static_collision_avoidance
   DEPENDS Boost
   INCLUDE_DIRS include/${PROJECT_NAME}
   LIBRARIES lmpcc_configuration lmpcc
