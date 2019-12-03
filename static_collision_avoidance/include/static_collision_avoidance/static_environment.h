@@ -28,7 +28,7 @@
 
 #include <chrono>
 
-//#include <static_collision_avoidance/collision_free_polygon.h>
+#include <static_collision_avoidance/collision_free_polygon.h>
 class StaticEnvironment
 {
     ros::NodeHandle nh_;
