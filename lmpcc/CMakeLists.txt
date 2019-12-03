@@ -40,6 +40,11 @@ generate_dynamic_reconfigure_options(
 )
 
 # Generate added messages and services with any dependencies listed here
+add_action_files(
+  DIRECTORY action
+  FILES move.action traj.action
+)
+
 generate_messages(
     DEPENDENCIES
     actionlib_msgs

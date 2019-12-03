@@ -44,7 +44,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES
   CATKIN_DEPENDS actionlib actionlib_msgs cmake_modules dynamic_reconfigure geometry_msgs pedsim_msgs  nav_msgs roscpp sensor_msgs shape_msgs std_msgs std_srvs tf trajectory_msgs vision_msgs visualization_msgs lmpcc_msgs
-  DEPENDS system_lib
+  #DEPENDS system_lib
 )
 
 ###########
