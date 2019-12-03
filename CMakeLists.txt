@@ -19,6 +19,7 @@ include_directories(lmpcc_obstacle_feed/include)
 include_directories(lmpcc_obstacle_feed/include/lmpcc_obstacle_feed)
 include_directories(mobile_robot_state_publisher/include)
 include_directories(mobile_robot_state_publisher/include/mobile_robot_state_publisher)
+include_directories(static_collision_avoidance/include)
 include_directories(vision_msgs/include)
 include_directories(vision_msgs/include/vision_msgs)
 
@@ -165,7 +166,7 @@ add_executable(amr_lmpcc
     lmpcc/include/lmpcc/lmpcc_configuration.h
     lmpcc/include/lmpcc/lmpcc_controller.h
     lmpcc/include/lmpcc/reference_path.h
-        lmpcc/include/tkspline/spline.h
+    lmpcc/include/tkspline/spline.h
     lmpcc/launch/lmpcc.launch
     lmpcc/launch/robot_lmpcc.launch
     lmpcc/qpoases/INCLUDE/EXTRAS/SolutionAnalysis.hpp
@@ -213,7 +214,7 @@ add_executable(amr_lmpcc
     lmpcc/src/lmpcc_node.cpp
     lmpcc/src/reference_path.cpp
     lmpcc/src/spline.cpp
-        lmpcc/CMakeLists.txt
+    lmpcc/CMakeLists.txt
     lmpcc/FindACADO.cmake
     lmpcc/package.xml
     lmpcc/README.md
@@ -274,6 +275,15 @@ add_executable(amr_lmpcc
     mobile_robot_state_publisher/src/mobile_robot_state_publisher_node.cpp
     mobile_robot_state_publisher/CMakeLists.txt
     mobile_robot_state_publisher/package.xml
+    static_collision_avoidance/config/local_map_params.yaml
+    static_collision_avoidance/config/static_avoidance_config.yaml
+    static_collision_avoidance/include/static_collision_avoidance/static_environment.h
+    static_collision_avoidance/src/static_collision_avoidance_node.cpp 
+    static_collision_avoidance/src/static_environment.cpp
+    static_collision_avoidance/launch/static_collision_avoidance.launch
+    static_collision_avoidance/msg/collision_free_polygon.msg
+    static_collision_avoidance/CMakeLists.txt
+    static_collision_avoidance/package.xml
     vision_msgs/include/vision_msgs/create_aabb.h
     vision_msgs/msg/BoundingBox2D.msg
     vision_msgs/msg/BoundingBox3D.msg
