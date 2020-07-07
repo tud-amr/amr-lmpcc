@@ -1,295 +1,67 @@
-cmake_minimum_required(VERSION 3.10)
-project(amr_lmpcc)
+# toplevel CMakeLists.txt for a catkin workspace
+# catkin/cmake/toplevel.cmake
 
-set(CMAKE_CXX_STANDARD 11)
+cmake_minimum_required(VERSION 2.8.3)
 
-include_directories(base_moveit_controller_manager/include)
-include_directories(base_moveit_controller_manager/include/base_moveit_controller_manager)
-include_directories(base_moveit_controller_manager/include/tkspline)
-include_directories(costmap_2d/include)
-include_directories(costmap_2d/include/costmap_2d)
-include_directories(lmpcc/include)
-include_directories(lmpcc/include/lmpcc)
-include_directories(lmpcc/include/lmpcc/ocp)
-include_directories(lmpcc/include/tkspline)
-include_directories(lmpcc/qpoases/INCLUDE)
-include_directories(lmpcc/qpoases/INCLUDE/EXTRAS)
-include_directories(lmpcc_msgs/include)
-include_directories(lmpcc_obstacle_feed/include)
-include_directories(lmpcc_obstacle_feed/include/lmpcc_obstacle_feed)
-include_directories(mobile_robot_state_publisher/include)
-include_directories(mobile_robot_state_publisher/include/mobile_robot_state_publisher)
-include_directories(vision_msgs/include)
-include_directories(vision_msgs/include/vision_msgs)
+set(CATKIN_TOPLEVEL TRUE)
 
-add_executable(amr_lmpcc
-    base_moveit_controller_manager/include/base_moveit_controller_manager/base_moveit_controller.h
-    base_moveit_controller_manager/include/base_moveit_controller_manager/base_moveit_controller_manager.h
-    base_moveit_controller_manager/include/tkspline/spline.h
-    base_moveit_controller_manager/src/base_moveit_controller.cpp
-    base_moveit_controller_manager/src/base_moveit_controller_manager.cpp
-    base_moveit_controller_manager/src/Clothoid.cpp
-    base_moveit_controller_manager/src/spline.cpp
-    base_moveit_controller_manager/base_moveit_controller_manager_plugin_description.xml
-    base_moveit_controller_manager/CMakeLists.txt
-    base_moveit_controller_manager/package.xml
-    base_moveit_controller_manager/README.md
-    costmap_2d/cfg/Costmap2D.cfg
-    costmap_2d/cfg/GenericPlugin.cfg
-    costmap_2d/cfg/InflationPlugin.cfg
-    costmap_2d/cfg/ObstaclePlugin.cfg
-    costmap_2d/cfg/VoxelPlugin.cfg
-    costmap_2d/include/costmap_2d/array_parser.h
-    costmap_2d/include/costmap_2d/cost_values.h
-    costmap_2d/include/costmap_2d/costmap_2d.h
-    costmap_2d/include/costmap_2d/costmap_2d_publisher.h
-    costmap_2d/include/costmap_2d/costmap_2d_ros.h
-    costmap_2d/include/costmap_2d/costmap_layer.h
-    costmap_2d/include/costmap_2d/costmap_math.h
-    costmap_2d/include/costmap_2d/footprint.h
-    costmap_2d/include/costmap_2d/inflation_layer.h
-    costmap_2d/include/costmap_2d/layer.h
-    costmap_2d/include/costmap_2d/layered_costmap.h
-    costmap_2d/include/costmap_2d/observation.h
-    costmap_2d/include/costmap_2d/observation_buffer.h
-    costmap_2d/include/costmap_2d/obstacle_layer.h
-    costmap_2d/include/costmap_2d/static_layer.h
-    costmap_2d/include/costmap_2d/testing_helper.h
-    costmap_2d/include/costmap_2d/voxel_layer.h
-    costmap_2d/launch/example.launch
-    costmap_2d/launch/example_params.yaml
-    costmap_2d/msg/VoxelGrid.msg
-    costmap_2d/plugins/inflation_layer.cpp
-    costmap_2d/plugins/obstacle_layer.cpp
-    costmap_2d/plugins/static_layer.cpp
-    costmap_2d/plugins/voxel_layer.cpp
-    costmap_2d/src/array_parser.cpp
-    costmap_2d/src/costmap_2d.cpp
-    costmap_2d/src/costmap_2d_cloud.cpp
-    costmap_2d/src/costmap_2d_markers.cpp
-    costmap_2d/src/costmap_2d_node.cpp
-    costmap_2d/src/costmap_2d_publisher.cpp
-    costmap_2d/src/costmap_2d_ros.cpp
-    costmap_2d/src/costmap_layer.cpp
-    costmap_2d/src/costmap_math.cpp
-    costmap_2d/src/footprint.cpp
-    costmap_2d/src/layer.cpp
-    costmap_2d/src/layered_costmap.cpp
-    costmap_2d/src/observation_buffer.cpp
-    costmap_2d/test/array_parser_test.cpp
-    costmap_2d/test/costmap_params.yaml
-    costmap_2d/test/costmap_tester.cpp
-    costmap_2d/test/footprint_tests.cpp
-    costmap_2d/test/footprint_tests.launch
-    costmap_2d/test/inflation_tests.cpp
-    costmap_2d/test/inflation_tests.launch
-    costmap_2d/test/module_tests.cpp
-    costmap_2d/test/obstacle_tests.cpp
-    costmap_2d/test/obstacle_tests.launch
-    costmap_2d/test/simple_driving_test.xml
-    costmap_2d/test/static_tests.cpp
-    costmap_2d/test/static_tests.launch
-    costmap_2d/test/TenByTen.pgm
-    costmap_2d/test/TenByTen.yaml
-    costmap_2d/CHANGELOG.rst
-    costmap_2d/CMakeLists.txt
-    costmap_2d/costmap_plugins.xml
-    costmap_2d/package.xml
-    jackal_moveit_description/config/controllers.yaml
-    jackal_moveit_description/config/fake_controllers.yaml
-    jackal_moveit_description/config/jackal.srdf
-    jackal_moveit_description/config/joint_limits.yaml
-    jackal_moveit_description/config/kinematics.yaml
-    jackal_moveit_description/config/ompl_planning.yaml
-    jackal_moveit_description/config/sensors_jackal.yaml
-    jackal_moveit_description/launch/default_warehouse_db.launch
-    jackal_moveit_description/launch/demo.launch
-    jackal_moveit_description/launch/fake_moveit_controller_manager.launch.xml
-    jackal_moveit_description/launch/jackal_moveit_controller_manager.launch.xml
-    jackal_moveit_description/launch/jackal_moveit_sensor_manager.launch.xml
-    jackal_moveit_description/launch/joystick_control.launch
-    jackal_moveit_description/launch/move_group.launch
-    jackal_moveit_description/launch/moveit.rviz
-    jackal_moveit_description/launch/moveit_rviz.launch
-    jackal_moveit_description/launch/ompl_planning_pipeline.launch.xml
-    jackal_moveit_description/launch/planning_context.launch
-    jackal_moveit_description/launch/planning_pipeline.launch.xml
-    jackal_moveit_description/launch/robot_move_group.launch
-    jackal_moveit_description/launch/run_benchmark_ompl.launch
-    jackal_moveit_description/launch/sensor_manager.launch.xml
-    jackal_moveit_description/launch/setup_assistant.launch
-    jackal_moveit_description/launch/trajectory_execution.launch.xml
-    jackal_moveit_description/launch/warehouse.launch
-    jackal_moveit_description/launch/warehouse_settings.launch.xml
-    jackal_moveit_description/CMakeLists.txt
-    jackal_moveit_description/package.xml
-    jackal_simulator/jackal_gazebo/launch/animated_world.launch
-    jackal_simulator/jackal_gazebo/launch/jackal_animated_world.launch
-    jackal_simulator/jackal_gazebo/launch/jackal_rviz.launch
-    jackal_simulator/jackal_gazebo/launch/jackal_sensor.launch
-    jackal_simulator/jackal_gazebo/launch/jackal_static.launch
-    jackal_simulator/jackal_gazebo/launch/jackal_world.launch
-    jackal_simulator/jackal_gazebo/launch/static_world.launch
-    jackal_simulator/jackal_gazebo/Media/models/textures/mtt.png
-    jackal_simulator/jackal_gazebo/Media/models/textures/texture0.jpg
-    jackal_simulator/jackal_gazebo/Media/models/textures/texture0.png
-    jackal_simulator/jackal_gazebo/Media/models/textures/Vegetation_Grass1.jpg
-    jackal_simulator/jackal_gazebo/Media/models/OliveTree1.dae
-    jackal_simulator/jackal_gazebo/Media/models/OliveTree2.dae
-    jackal_simulator/jackal_gazebo/Media/models/PineTree.dae
-    jackal_simulator/jackal_gazebo/Media/models/scenario1.dae
-    jackal_simulator/jackal_gazebo/Media/models/walk.dae
-    jackal_simulator/jackal_gazebo/worlds/animated.world
-    jackal_simulator/jackal_gazebo/worlds/cyberzoo.sdf
-    jackal_simulator/jackal_gazebo/worlds/jackal_race.world
-    jackal_simulator/jackal_gazebo/worlds/scenario1.world
-    jackal_simulator/jackal_gazebo/worlds/static.world
-    jackal_simulator/jackal_gazebo/worlds/static2.world
-    jackal_simulator/jackal_gazebo/worlds/walk.dae
-    jackal_simulator/jackal_gazebo/CHANGELOG.rst
-    jackal_simulator/jackal_gazebo/CMakeLists.txt
-    jackal_simulator/jackal_gazebo/package.xml
-    jackal_simulator/jackal_simulator/CHANGELOG.rst
-    jackal_simulator/jackal_simulator/CMakeLists.txt
-    jackal_simulator/jackal_simulator/package.xml
-    jackal_simulator/rosinstall
-    lmpcc/action/move.action
-    lmpcc/action/traj.action
-    lmpcc/cfg/Lmpcc.cfg
-    lmpcc/config/lmpcc_config_parameter.yaml
-    lmpcc/config/local_map_params.yaml
-    lmpcc/include/lmpcc/ocp/acado_auxiliary_functions.h
-    lmpcc/include/lmpcc/ocp/acado_common.h
-    lmpcc/include/lmpcc/ocp/acado_qpoases_interface.hpp
-    lmpcc/include/lmpcc/Clothoid.h
-    lmpcc/include/lmpcc/lmpcc_configuration.h
-    lmpcc/include/lmpcc/lmpcc_controller.h
-    lmpcc/include/lmpcc/reference_path.h
-        lmpcc/include/tkspline/spline.h
-    lmpcc/launch/lmpcc.launch
-    lmpcc/launch/robot_lmpcc.launch
-    lmpcc/qpoases/INCLUDE/EXTRAS/SolutionAnalysis.hpp
-    lmpcc/qpoases/INCLUDE/Bounds.hpp
-    lmpcc/qpoases/INCLUDE/Constants.hpp
-    lmpcc/qpoases/INCLUDE/Constraints.hpp
-    lmpcc/qpoases/INCLUDE/CyclingManager.hpp
-    lmpcc/qpoases/INCLUDE/Indexlist.hpp
-    lmpcc/qpoases/INCLUDE/MessageHandling.hpp
-    lmpcc/qpoases/INCLUDE/QProblem.hpp
-    lmpcc/qpoases/INCLUDE/QProblemB.hpp
-    lmpcc/qpoases/INCLUDE/SubjectTo.hpp
-    lmpcc/qpoases/INCLUDE/Types.hpp
-    lmpcc/qpoases/INCLUDE/Utils.hpp
-    lmpcc/qpoases/SRC/EXTRAS/SolutionAnalysis.cpp
-    lmpcc/qpoases/SRC/Bounds.cpp
-    lmpcc/qpoases/SRC/Bounds.ipp
-    lmpcc/qpoases/SRC/Constraints.cpp
-    lmpcc/qpoases/SRC/Constraints.ipp
-    lmpcc/qpoases/SRC/CyclingManager.cpp
-    lmpcc/qpoases/SRC/CyclingManager.ipp
-    lmpcc/qpoases/SRC/Indexlist.cpp
-    lmpcc/qpoases/SRC/Indexlist.ipp
-    lmpcc/qpoases/SRC/MessageHandling.cpp
-    lmpcc/qpoases/SRC/MessageHandling.ipp
-    lmpcc/qpoases/SRC/QProblem.cpp
-    lmpcc/qpoases/SRC/QProblem.ipp
-    lmpcc/qpoases/SRC/QProblemB.cpp
-    lmpcc/qpoases/SRC/QProblemB.ipp
-    lmpcc/qpoases/SRC/SubjectTo.cpp
-    lmpcc/qpoases/SRC/SubjectTo.ipp
-    lmpcc/qpoases/SRC/Utils.cpp
-    lmpcc/qpoases/SRC/Utils.ipp
-    lmpcc/rviz_config/rviz_config.rviz
-    lmpcc/src/ocp/acado_auxiliary_functions.c
-    lmpcc/src/ocp/acado_hessian_regularization.c
-    lmpcc/src/ocp/acado_integrator.c
-    lmpcc/src/ocp/acado_qpoases_interface.cpp
-    lmpcc/src/ocp/acado_solver.c
-    lmpcc/src/ocp/Makefile
-    lmpcc/src/ocp/test.c
-    lmpcc/src/Clothoid.cpp
-    lmpcc/src/lmpcc_configuration.cpp
-    lmpcc/src/lmpcc_controller.cpp
-    lmpcc/src/lmpcc_node.cpp
-    lmpcc/src/reference_path.cpp
-    lmpcc/src/spline.cpp
-        lmpcc/CMakeLists.txt
-    lmpcc/FindACADO.cmake
-    lmpcc/package.xml
-    lmpcc/README.md
-    lmpcc/setup.py
-    lmpcc_msgs/msg/lmpcc_feedback.msg
-    lmpcc_msgs/msg/lmpcc_obstacle.msg
-    lmpcc_msgs/msg/lmpcc_obstacle_array.msg
-    lmpcc_msgs/srv/IntTrigger.srv
-    lmpcc_msgs/CMakeLists.txt
-    lmpcc_msgs/package.xml
-    lmpcc_obstacle_feed/cfg/ObstacleFeed.cfg
-    lmpcc_obstacle_feed/config/lmpcc_obstacle_feed_config.yaml
-    lmpcc_obstacle_feed/include/lmpcc_obstacle_feed/lmpcc_obstacle_feed.h
-    lmpcc_obstacle_feed/include/lmpcc_obstacle_feed/lmpcc_obstacle_feed_configuration.h
-    lmpcc_obstacle_feed/launch/lmpcc_obstacle_feed.launch
-    lmpcc_obstacle_feed/launch/map_lmpcc_obstacle_feed.launch
-    lmpcc_obstacle_feed/maps/corridor.png
-    lmpcc_obstacle_feed/maps/corridor.svg
-    lmpcc_obstacle_feed/maps/corridor.yaml
-    lmpcc_obstacle_feed/maps/corridor2.png
-    lmpcc_obstacle_feed/maps/corridor2.svg
-    lmpcc_obstacle_feed/maps/corridor3.png
-    lmpcc_obstacle_feed/maps/corridor3.svg
-    lmpcc_obstacle_feed/maps/cyberzoo.png
-    lmpcc_obstacle_feed/maps/cyberzoo.yaml
-    lmpcc_obstacle_feed/maps/cyberzoo_box.png
-    lmpcc_obstacle_feed/maps/cyberzoo_box.yaml
-    lmpcc_obstacle_feed/maps/cyberzoo_rect.png
-    lmpcc_obstacle_feed/maps/cyberzoo_rect.yaml
-    lmpcc_obstacle_feed/maps/cyberzoo_smallbox.png
-    lmpcc_obstacle_feed/maps/cyberzoo_smallbox.yaml
-    lmpcc_obstacle_feed/maps/cyberzoo_twobox.png
-    lmpcc_obstacle_feed/maps/cyberzoo_twobox.yaml
-    lmpcc_obstacle_feed/maps/cyberzoo_twoboxes.png
-    lmpcc_obstacle_feed/maps/cyberzoo_twoboxes.yaml
-    lmpcc_obstacle_feed/maps/entrance+corridor_faculty2.png
-    lmpcc_obstacle_feed/maps/entrance+corridor_faculty3.png
-    lmpcc_obstacle_feed/maps/entrance+corridor_faculty3.svg
-    lmpcc_obstacle_feed/maps/faculty.yaml
-    lmpcc_obstacle_feed/maps/free_space_map.png
-    lmpcc_obstacle_feed/maps/free_space_map.svg
-    lmpcc_obstacle_feed/maps/free_space_map.yaml
-    lmpcc_obstacle_feed/maps/static_map.png
-    lmpcc_obstacle_feed/maps/static_map.svg
-    lmpcc_obstacle_feed/maps/static_map.yaml
-    lmpcc_obstacle_feed/maps/two_walls.pgm
-    lmpcc_obstacle_feed/maps/two_walls.png
-    lmpcc_obstacle_feed/maps/two_walls.svg
-    lmpcc_obstacle_feed/maps/two_walls.yaml
-    lmpcc_obstacle_feed/src/lmpcc_obstacle_feed.cpp
-    lmpcc_obstacle_feed/src/lmpcc_obstacle_feed_configuration.cpp
-    lmpcc_obstacle_feed/src/lmpcc_obstacle_feed_node.cpp
-    lmpcc_obstacle_feed/CMakeLists.txt
-    lmpcc_obstacle_feed/package.xml
-    mobile_robot_state_publisher/config/jackal.yaml
-    mobile_robot_state_publisher/include/mobile_robot_state_publisher/mobile_robot_state_publisher.h
-    mobile_robot_state_publisher/launch/mobile_robot_publisher.launch
-    mobile_robot_state_publisher/src/mobile_robot_state_publisher_node.cpp
-    mobile_robot_state_publisher/CMakeLists.txt
-    mobile_robot_state_publisher/package.xml
-    vision_msgs/include/vision_msgs/create_aabb.h
-    vision_msgs/msg/BoundingBox2D.msg
-    vision_msgs/msg/BoundingBox3D.msg
-    vision_msgs/msg/Classification2D.msg
-    vision_msgs/msg/Classification3D.msg
-    vision_msgs/msg/Detection2D.msg
-    vision_msgs/msg/Detection2DArray.msg
-    vision_msgs/msg/Detection3D.msg
-    vision_msgs/msg/Detection3DArray.msg
-    vision_msgs/msg/ObjectHypothesis.msg
-    vision_msgs/msg/ObjectHypothesisWithPose.msg
-    vision_msgs/msg/VisionInfo.msg
-    vision_msgs/test/CMakeLists.txt
-    vision_msgs/test/main.cpp
-    vision_msgs/CHANGELOG.rst
-    vision_msgs/CMakeLists.txt
-    vision_msgs/LICENSE
-    vision_msgs/package.xml
-    vision_msgs/README.md)
+# search for catkin within the workspace
+set(_cmd "catkin_find_pkg" "catkin" "${CMAKE_SOURCE_DIR}")
+execute_process(COMMAND ${_cmd}
+  RESULT_VARIABLE _res
+  OUTPUT_VARIABLE _out
+  ERROR_VARIABLE _err
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_STRIP_TRAILING_WHITESPACE
+)
+if(NOT _res EQUAL 0 AND NOT _res EQUAL 2)
+  # searching fot catkin resulted in an error
+  string(REPLACE ";" " " _cmd_str "${_cmd}")
+  message(FATAL_ERROR "Search for 'catkin' in workspace failed (${_cmd_str}): ${_err}")
+endif()
+
+# include catkin from workspace or via find_package()
+if(_res EQUAL 0)
+  set(catkin_EXTRAS_DIR "${CMAKE_SOURCE_DIR}/${_out}/cmake")
+  # include all.cmake without add_subdirectory to let it operate in same scope
+  include(${catkin_EXTRAS_DIR}/all.cmake NO_POLICY_SCOPE)
+  add_subdirectory("${_out}")
+
+else()
+  # use either CMAKE_PREFIX_PATH explicitly passed to CMake as a command line argument
+  # or CMAKE_PREFIX_PATH from the environment
+  if(NOT DEFINED CMAKE_PREFIX_PATH)
+    if(NOT "$ENV{CMAKE_PREFIX_PATH}" STREQUAL "")
+      if(NOT WIN32)
+        string(REPLACE ":" ";" CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH})
+      else()
+        set(CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH})
+      endif()
+    endif()
+  endif()
+
+  # list of catkin workspaces
+  set(catkin_search_path "")
+  foreach(path ${CMAKE_PREFIX_PATH})
+    if(EXISTS "${path}/.catkin")
+      list(FIND catkin_search_path ${path} _index)
+      if(_index EQUAL -1)
+        list(APPEND catkin_search_path ${path})
+      endif()
+    endif()
+  endforeach()
+
+  # search for catkin in all workspaces
+  set(CATKIN_TOPLEVEL_FIND_PACKAGE TRUE)
+  find_package(catkin QUIET
+    NO_POLICY_SCOPE
+    PATHS ${catkin_search_path}
+    NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
+  unset(CATKIN_TOPLEVEL_FIND_PACKAGE)
+
+  if(NOT catkin_FOUND)
+    message(FATAL_ERROR "find_package(catkin) failed. catkin was neither found in the workspace nor in the CMAKE_PREFIX_PATH. One reason may be that no ROS setup.sh was sourced before.")
+  endif()
+endif()
+
+catkin_workspace()

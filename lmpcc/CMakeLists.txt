@@ -39,18 +39,19 @@ generate_dynamic_reconfigure_options(
 )
 
 # Generate added messages and services with any dependencies listed here
-generate_messages(
-    DEPENDENCIES
-    actionlib_msgs
-    geometry_msgs
-    sensor_msgs
-    std_msgs
-    nav_msgs
-    map_msgs
-    shape_msgs
-    visualization_msgs
-    lmpcc_msgs
-)
+#generate_messages(
+#    DEPENDENCIES
+#    actionlib_msgs
+#    geometry_msgs
+#    sensor_msgs
+#    std_msgs
+#    nav_msgs
+#    map_msgs
+#    shape_msgs
+#    visualization_msgs
+#    lmpcc_msgs
+#    static_collision_avoidance
+#)
 
 catkin_package(
   CATKIN_DEPENDS actionlib_msgs dynamic_reconfigure eigen_conversions geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf_conversions urdf visualization_msgs shape_msgs  lmpcc_msgs static_collision_avoidance
@@ -65,6 +66,7 @@ include_directories(include
     ${EIGEN_INCLUDE_DIRS}
     include/${PROJECT_NAME}
     include/${PROJECT_NAME}/ocp
+    ../static_collision_avoidance/include
     qpoases/include
     qpoases/src
     )
@@ -96,6 +98,8 @@ add_library(lmpcc
         src/ocp/acado_integrator.c
         src/ocp/acado_solver.c
         src/ocp/acado_auxiliary_functions.c)
+
+add_dependencies(lmpcc ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_include_directories(lmpcc PUBLIC
         qpoases
