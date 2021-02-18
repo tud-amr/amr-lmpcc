@@ -216,9 +216,9 @@ public:
     bool transformPose(const std::string& from, const std::string& to, geometry_msgs::Pose& pose);
 
     /**
-     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectos are slow to random access
+     * @brief transformStdVectorToEigenVector: tranform std vector to eigen vectors as std vectors are slow to random access
      * @param vector: std vectors want to tranfrom
-     * @return Eigen vectors transform from std vectos
+     * @return Eigen vectors transform from std vectors
      */
     template<typename T>
     static inline Eigen::VectorXd transformStdVectorToEigenVector(const std::vector<T>& vector)
