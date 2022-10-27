@@ -63,6 +63,8 @@ catkin_make
 source devel/setup.bash
 ```
 
+## Solver code
+Repository: https://github.com/bbrito/acado/blob/four_persons/examples/ocp/bioreactor.cpp
 
 ## Running LMPCC
 * Simulation Environment
