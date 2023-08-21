@@ -228,7 +228,7 @@ bool LMPCC::initialize()
 	}
 }
 
-bool LMPCC::initialize_visuals()
+void LMPCC::initialize_visuals()
 {
     //ROS_INFO_STREAM("initialize_visuals");
     robot_collision_space_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/robot_collision_space", 100);

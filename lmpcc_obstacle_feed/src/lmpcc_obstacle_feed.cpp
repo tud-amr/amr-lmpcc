@@ -395,7 +395,7 @@ void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objec
 
 }
 
-void ObstacleFeed::PedsimCallback(const pedsim_msgs::TrackedPersons& person)
+void ObstacleFeed::PedsimCallback(const spencer_tracking_msgs::TrackedPersons& person)
 {
     //ROS_INFO_STREAM("PEDSIM callback!");
 

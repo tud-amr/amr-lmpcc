@@ -154,7 +154,7 @@ private:
     void clearDataMember();
     void detectionsCallback(const vision_msgs::Detection3DArray& objects);
     void pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person);
-    void PedsimCallback(const pedsim_msgs::TrackedPersons& person);
+    void PedsimCallback(const spencer_tracking_msgs::TrackedPersons& person);
     void optitrackCallback(const nav_msgs::Path& predicted_path);
     void updateObstacles(const ros::TimerEvent& event);
     void publishObstacles(const lmpcc_msgs::lmpcc_obstacle_array& obstacles);

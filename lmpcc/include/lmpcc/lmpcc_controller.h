@@ -185,7 +185,7 @@ public:
     bool initialize();
 
 
-    bool initialize_visuals();
+    void initialize_visuals();
 
     /**
      * @brief StateCallBack: Get current state of the robot
