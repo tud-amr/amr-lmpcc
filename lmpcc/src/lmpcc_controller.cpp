@@ -483,8 +483,9 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
         acadoVariables.u[3] = 0.0000001;           //slack variable
 
 		if(acadoVariables.x[3] > ss[2]) {
-
-            if((std::sqrt(std::pow(current_state_(0)-15,2)+std::pow(current_state_(1),2))<1) || (current_state_(0)>15)){
+            double goal_x = lmpcc_config_->ref_x_[lmpcc_config_->ref_x_.size() - 1];
+            double goal_y = lmpcc_config_->ref_y_[lmpcc_config_->ref_y_.size() - 1];
+            if(std::sqrt(std::pow(current_state_(0) - goal_x, 2) + std::pow(current_state_(1) - goal_y, 2)) < 3){
 		        goal_reached_ = true;
                 ROS_ERROR_STREAM("GOAL REACHED");
 
@@ -499,6 +500,18 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
                     acadoVariables.x[3] = referencePath.GetS0();
 
                     //ROS_ERROR_STREAM("LOOP STARTED");
+
+                    /** Set task flags and counters **/
+                    segment_counter = 0;
+                    goal_reached_ = false;
+
+                    if (lmpcc_config_->activate_debug_output_)
+                        referencePath.PrintLocalPath(ss,xx,yy);     // Print local reference path
+                    if (lmpcc_config_->activate_visualization_)
+                    {
+                        publishLocalRefPath();                      // Publish local reference path for visualization
+                        publishGlobalPlan();                        // Publish global reference path for visualization
+                    }
                 }
             } else{
 			    segment_counter++;
@@ -667,6 +680,8 @@ void LMPCC::controlLoop(const ros::TimerEvent &event)
 	}
 
     if(!enable_output_ || acado_getKKT() > lmpcc_config_->kkt_tolerance_) {
+        if (acado_getKKT() > lmpcc_config_->kkt_tolerance_)
+            ROS_INFO_STREAM("Failed to find solution! KKT value: " << acado_getKKT() << ", tolerance: " << lmpcc_config_->kkt_tolerance_);
 		publishZeroJointVelocity();
 	}
 	else {
