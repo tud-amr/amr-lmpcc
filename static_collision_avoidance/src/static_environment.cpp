@@ -314,10 +314,10 @@ void StaticEnvironment::ComputeCollisionFreeArea()
     }
     auto end = std::chrono::steady_clock::now();
 
-    te_collision_free_ = double(std::chrono::duration_cast <std::chrono::milliseconds> (end-start).count());
+    te_collision_free_ = double(std::chrono::duration_cast <std::chrono::microseconds> (end-start).count());
 
     if (activate_timing_output_)
-        ROS_INFO_STREAM("Free space solve time " << te_collision_free_  << " ms");
+        ROS_INFO_STREAM("Free space solve time " << te_collision_free_  << " us");
 }
 
 void StaticEnvironment::computeConstraint(int x_i, int y_i, double x_path, double y_path, double psi_path, int N)

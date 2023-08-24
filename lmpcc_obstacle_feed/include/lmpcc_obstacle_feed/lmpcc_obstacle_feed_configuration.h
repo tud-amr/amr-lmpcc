@@ -78,6 +78,7 @@ public:
 
     bool activate_debug_output_;
     bool activate_visualization_;
+    bool activate_timing_output_;
 
     int update_rate_;
     int discretization_steps_;

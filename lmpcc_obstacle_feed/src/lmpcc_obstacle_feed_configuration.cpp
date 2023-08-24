@@ -91,6 +91,13 @@ bool lmpcc_obstacle_feed_configuration::initialize()
     }
 
     // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
+    if (!nh.getParam ("activate_timing_output", activate_timing_output_) )
+    {
+        ROS_WARN(" Parameter 'activate_timing_output' not set on %s node " , ros::this_node::getName().c_str());
+        return false;
+    }
+
+    // read parameter from parameter server if not set than terminate code, as this parameter is essential parameter
     if (!nh.getParam ("update_rate", update_rate_) )
     {
         ROS_WARN(" Parameter 'update_rate' not set on %s node " , ros::this_node::getName().c_str());

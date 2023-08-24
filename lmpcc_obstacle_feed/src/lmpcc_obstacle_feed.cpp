@@ -398,7 +398,7 @@ void ObstacleFeed::detectionsCallback(const vision_msgs::Detection3DArray& objec
 void ObstacleFeed::PedsimCallback(const spencer_tracking_msgs::TrackedPersons& person)
 {
     //ROS_INFO_STREAM("PEDSIM callback!");
-
+    auto start = std::chrono::steady_clock::now();
     double Xp, Yp;
     double q1, q2, q3, q4;
     double mag_q, distance;
@@ -616,6 +616,11 @@ void ObstacleFeed::PedsimCallback(const spencer_tracking_msgs::TrackedPersons& p
         visualizeObstacles(local_ellipses);
 
     }
+    auto end = std::chrono::steady_clock::now();
+    double dynamic_obs = double(std::chrono::duration_cast <std::chrono::microseconds> (end-start).count());
+
+    if (lmpcc_obstacle_feed_config_->activate_timing_output_)
+        ROS_INFO_STREAM("Dynamic obstacle solve time " << dynamic_obs  << " us");
 }
 
 void ObstacleFeed::pedestriansCallback(const spencer_tracking_msgs::TrackedPersons& person)
