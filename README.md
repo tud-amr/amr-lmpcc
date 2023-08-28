@@ -43,21 +43,18 @@ The authors would like to thank Wilko Schwarting for sharing its Matlab implemen
 ## Software Requirements
 * ROS installation
 * Ubuntu
-* Pedestrian Simulator: pedsim_ros: https://github.com/bbrito/pedsim_ros
+* Pedestrian Simulator: pedsim_ros: https://github.com/weemma/pedsim_ros
     * Branch: four_persons
 
 ## Instalation instructions
-This set of instructions were only tested for Ubuntu16 with ROS-Kinetic. Additionally, we assume that you already have a complete ROS installation.
+This set of instructions were tested for Ubuntu16.04 with ROS-Kinetic and Ubuntu20.04 with ROS-Noetic. Additionally, we assume that you already have a complete ROS installation.
 * Please follow the following instructions:
 ```
-sudo apt-get install ros-kinetic-jackal-control ros-kinetic-jackal-gazebo ros-kinetic-jackal-simulator ros-kinetic-jackal-description ros-kinetic-jackal-desktop ros-kinetic-jackal-navigation ros-kinetic-jackal-viz
-sudo apt install ros-kinetic-people-msgs
-cd [workspace]/src
-git clone https://github.com/bbrito/pedsim_ros.git -b four_persons
-git clone https://github.com/spencer-project/spencer_messages.git
-git clone https://github.com/srl-freiburg/spencer_tracking_rviz_plugin.git
+sudo apt-get install ros-$ROS_DISTRO-jackal-control ros-$ROS_DISTRO-jackal-gazebo ros-$ROS_DISTRO-jackal-simulator ros-$ROS_DISTRO-jackal-description ros-$ROS_DISTRO-jackal-desktop ros-$ROS_DISTRO-jackal-navigation ros-$ROS_DISTRO-jackal-viz ros-$ROS_DISTRO-people-msgs
+cd [catkin_workspace]/src
+git clone --recursive https://github.com/weemma/pedsim_ros.git -b four_persons
 git clone https://github.com/tud-amr/amr-lmpcc.git
-cc ../
+cd ../
 rosdep install --from-paths src --ignore-src -r -y
 catkin_make
 source devel/setup.bash
@@ -77,7 +74,7 @@ Repository: https://github.com/bbrito/acado/blob/four_persons/examples/ocp/biore
 
         1. roslaunch lmpcc_obstacle_feed lmpcc_obstacle_feed.launch
 
-*Start lmpcc controller
+* Start lmpcc controller
 
         1. roslaunch lmpcc lmpcc.launch
 

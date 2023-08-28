@@ -5,7 +5,7 @@ gazebo_simulation: false
 # Debug modes
 activate_output: true
 activate_debug_output: false
-activate_timing_output: false
+activate_timing_output: true
 activate_visualization: true
 activate_feedback_message: true
 

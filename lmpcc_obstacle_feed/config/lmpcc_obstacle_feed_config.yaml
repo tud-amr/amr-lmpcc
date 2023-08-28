@@ -5,6 +5,7 @@ obstacle_feed_mode: 4
 # Debugging info
 activate_debug_output: false
 activate_visualization: true
+activate_timing_output: true
 
 # Rate at which ellipse obstacles should be send out
 update_rate: 20
@@ -30,7 +31,7 @@ subscribe:
 # Detection criteria
 detected_obstacles:
     distance_threshold: 50
-    obstacle_number: 4
+    obstacle_number: 8
     min_obstacle_volume: 0.03
     max_obstacle_volume: 1.0
     obstacle_size: 0.3
